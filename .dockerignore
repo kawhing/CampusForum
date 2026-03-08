@@ -19,7 +19,7 @@ mvnw.cmd
 *.sublime-workspace
 
 # Build
-target/
+## target/ 因为有必要的打包
 build/
 dist/
 
@@ -44,5 +44,5 @@ README.md
 .env.*.local
 logs/
 tmp/
-*.jar
+## *.jar 同样的，有重要的打包
 *.war
