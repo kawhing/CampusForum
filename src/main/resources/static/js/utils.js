@@ -233,7 +233,7 @@ function updateUserNav() {
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                     <li><a class="dropdown-item" href="/profile/${user.username}">个人资料</a></li>
-                    <li><a class="dropdown-item" th:href="@{/post-edit/0}">发布新帖</a></li>
+                    <li><a class="dropdown-item" href="/post/edit/0">发布新帖</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" onclick="logout()">退出登录</a></li>
                 </ul>
@@ -241,7 +241,7 @@ function updateUserNav() {
         `;
     } else {
         navUserMenu.innerHTML = `
-            <a class="nav-link" th:href="@{/login}">登录</a>
+            <a class="nav-link" href="/login">登录</a>
         `;
     }
 }
@@ -255,4 +255,47 @@ function logout() {
         localStorage.removeItem('token');
         location.reload();
     }
+}
+/**
+ * 登录（处理首页模态框的登录）
+ */
+function handleLogin() {
+    const username = document.getElementById('loginUsername')?.value.trim();
+    const password = document.getElementById('loginPassword')?.value;
+    
+    if (!username || !password) {
+        alert('用户名和密码不能为空');
+        return;
+    }
+
+    fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.code === 200) {
+            localStorage.setItem('user', JSON.stringify(data.data.user));
+            localStorage.setItem('token', data.data.token);
+            
+            // 关闭模态框
+            const modalElement = document.getElementById('loginModal');
+            if (modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                }
+            }
+            
+            // 重新加载页面以更新导航栏
+            location.reload();
+        } else {
+            alert(data.message || '登录失败，请检查用户名和密码');
+        }
+    })
+    .catch(error => {
+        console.error('登录请求失败:', error);
+        alert('登录请求失败，请重试');
+    });
 }

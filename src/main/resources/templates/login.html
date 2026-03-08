@@ -64,11 +64,6 @@
     const loginForm = document.getElementById('loginForm');
     const errorMessage = document.getElementById('errorMessage');
 
-    // 如果已登录，重定向到首页
-    if (localStorage.getItem('user')) {
-        window.location.href = '/';
-    }
-
     loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         errorMessage.style.display = 'none';
@@ -96,18 +91,8 @@
                     localStorage.setItem('rememberMe', 'true');
                 }
                 
-                // 检查是否有登录后的重定向目标
-                const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
-                sessionStorage.removeItem('redirectAfterLogin');
-                
-                window.location.href = redirectUrl || '/';
-            } else {
-                errorMessage.textContent = data.message || '登录失败，请检查用户名和密码';
-                errorMessage.style.display = 'block';
-            }
-        } catch (error) {
-            errorMessage.textContent = '登录失败，请重试';
-            errorMessage.style.display = 'block';
+                // 登陆成功，重定向到帖子列表
+                window.location.href = '/post-list';
             console.error('登录错误:', error);
         }
     });

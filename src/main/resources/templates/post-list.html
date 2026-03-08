@@ -218,12 +218,12 @@
         const user = JSON.parse(localStorage.getItem('user') || 'null');
         if (!user) {
             // 保存用户想要访问的目标页面
-            sessionStorage.setItem('redirectAfterLogin', '/post-edit');
+            sessionStorage.setItem('redirectAfterLogin', '/post/edit/0');
             // 弹出登录窗口
             openLoginModal();
         } else {
             // 用户已登录，直接跳转到发布页面
-            window.location.href = '/post-edit';
+            window.location.href = '/post/edit/0';
         }
     }
 
@@ -298,7 +298,7 @@
                 }
                 
                 // 跳转到保存的目标页面，或默认跳转到发布页面
-                const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/post-edit';
+                const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/post/edit/0';
                 sessionStorage.removeItem('redirectAfterLogin');
                 window.location.href = redirectUrl;
             } else {

@@ -177,7 +177,7 @@
 
     function openLoginModal() {
         // 保存用户想要访问的目标页面
-        sessionStorage.setItem('redirectAfterLogin', '/post-edit');
+        sessionStorage.setItem('redirectAfterLogin', '/post/edit/0');
         
         // 创建登录模态框
         const modalHtml = `
@@ -249,7 +249,7 @@
                 }
                 
                 // 跳转到保存的目标页面，或默认跳转到发布页面
-                const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/post-edit';
+                const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/post/edit/0';
                 sessionStorage.removeItem('redirectAfterLogin');
                 window.location.href = redirectUrl;
             } else {

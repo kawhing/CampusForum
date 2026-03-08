@@ -79,10 +79,8 @@ CREATE TABLE IF NOT EXISTS resources (
     INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='资源表';
 
--- 初始化管理员用户（密码：admin123，已使用MD5简单处理，实际应使用BCrypt）
-INSERT INTO users (username, password, email, realname, role, is_active) VALUES
-('admin', '0192023a7bbd73250516f069df18b500', 'admin@campusforum.com', '管理员', 'ADMIN', TRUE),
-('testuser', '0192023a7bbd73250516f069df18b500', 'test@campusforum.com', '测试用户', 'USER', TRUE);
+-- 用户表会通过应用代码自动初始化测试用户
+SELECT 1;
 
 -- 创建索引优化查询性能
 CREATE INDEX idx_posts_user_created ON posts(user_id, created_at);
