@@ -1,0 +1,74 @@
+# Maven
+target/
+.mvn/
+*.jar
+*.war
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.class
+*.classpath
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+~*
+
+# Build
+build/
+dist/
+
+# Dependencies
+node_modules/
+/.gradle/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+
+# Docker
+.docker/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Application files
+uploads/
+/db/
+
+# IDE specific
+.c9/
+*.launch
+.settings/
+
+# Miscellaneous
+.cache
+.parcel-cache
+dist/
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.temp
