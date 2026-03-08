@@ -2,7 +2,7 @@ spring:
   application:
     name: CampusForum
   datasource:
-    url: jdbc:mysql://db:3306/campus_forum?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://db:3306/campus_forum?useSSL=false&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver

@@ -47,7 +47,7 @@ services:
       # Spring profiles
       SPRING_PROFILES_ACTIVE: docker
       # 数据库连接配置
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/campus_forum?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/campus_forum?useSSL=false&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
