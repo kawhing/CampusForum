@@ -1,0 +1,26 @@
+{
+  "name": "CampusForum Development Container",
+  "image": "mcr.microsoft.com/devcontainers/java:11",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.extension-pack-for-java",
+        "vscjava.vscode-maven",
+        "vscjava.vscode-spring-boot-dashboard",
+        "eamodio.gitlens",
+        "ms-vscode.makefile-tools",
+        "humao.rest-client"
+      ],
+      "settings": {
+        "java.configuration.updateBuildConfiguration": "automatic",
+        "maven.executable.path": "/usr/local/sdkman/candidates/maven/current/bin/mvn"
+      }
+    }
+  },
+  "forwardPorts": [8080, 3306],
+  "postCreateCommand": "mvn clean install -DskipTests",
+  "remoteUser": "vscode"
+}

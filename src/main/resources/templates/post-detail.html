@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帖子详情 - 校园论坛</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/}">🎓 校园论坛</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/}">首页</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/post-list}">帖子</a>
+                </li>
+                <li class="nav-item" id="nav-user-menu">
+                    <a class="nav-link" th:href="@{/login}">登录</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- 帖子内容 -->
+            <div class="card mb-4" id="post-container">
+                <div class="card-body">
+                    <h1 class="card-title" id="post-title"></h1>
+                    <div class="text-muted mb-3">
+                        <strong id="post-author"></strong> · 
+                        <span id="post-category"></span> · 
+                        <span id="post-date"></span>
+                    </div>
+                    <hr>
+                    <div id="post-content" class="mb-4"></div>
+
+                    <!-- 文件列表 -->
+                    <div id="resources-section" style="display:none;">
+                        <h5>📎 附件</h5>
+                        <div id="resources-list"></div>
+                    </div>
+
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <span id="post-views"></span> 次浏览 · 
+                            <span id="post-replies"></span> 条回复
+                        </small>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editPost()">编辑</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deletePost()">删除</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 评论区 -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">评论 (<span id="comment-count">0</span>)</h5>
+                </div>
+                <div class="card-body">
+                    <!-- 发表评论表单 -->
+                    <div id="comment-form-section">
+                        <h6>发表评论</h6>
+                        <form id="commentForm">
+                            <div class="mb-3">
+                                <textarea class="form-control" id="commentContent" rows="3" placeholder="请输入您的评论..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">发表评论</button>
+                        </form>
+                    </div>
+
+                    <hr id="comment-divider" style="display:none;">
+
+                    <!-- 评论列表 -->
+                    <div id="comments-container"></div>
+
+                    <!-- 评论分页 -->
+                    <nav aria-label="Comments pagination" id="comment-pagination-section" style="display:none;">
+                        <ul class="pagination justify-content-center" id="comment-pagination"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- 侧边栏 -->
+        <div class="col-md-4">
+            <div class="card sticky-top" style="top: 80px;">
+                <div class="card-body">
+                    <h5 class="card-title">帖子信息</h5>
+                    <hr>
+                    <p><strong>分类:</strong> <span id="sidebar-category" class="badge bg-info"></span></p>
+                    <p><strong>浏览:</strong> <span id="sidebar-views">0</span> 次</p>
+                    <p><strong>回复:</strong> <span id="sidebar-replies">0</span> 条</p>
+                    <p><strong>发布时间:</strong> <span id="sidebar-date"></span></p>
+                    <hr>
+                    <button class="btn btn-primary w-100 mb-2" onclick="replyToPost()">💬 回复帖子</button>
+                    <button class="btn btn-outline-secondary w-100" onclick="sharePost()">🔗 分享</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="bg-dark text-white text-center py-4 mt-5">
+    <div class="container">
+        <p class="mb-0">&copy; 2026 校园论坛. 帮助学生互相交流、分享资源。</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/utils.js}"></script>
+<script>
+    let postId = null;
+    let currentCommentPage = 0;
+    const commentSize = 5;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        postId = new URLSearchParams(window.location.search).get('id') || window.location.pathname.split('/').pop();
+        if (postId) {
+            loadPost();
+        }
+        updateUserNav();
+    });
+
+    function loadPost() {
+        fetch(`/api/posts/${postId}`)
+            .then(response => response.json())
+            .then(data => {
+                const post = data.data;
+                document.getElementById('post-title').textContent = post.title;
+                document.getElementById('post-author').textContent = post.username || '未知用户';
+                document.getElementById('post-category').textContent = post.category;
+                document.getElementById('post-date').textContent = formatDate(post.createdAt);
+                document.getElementById('post-content').textContent = post.content;
+                document.getElementById('post-views').textContent = post.viewCount || 0;
+                document.getElementById('post-replies').textContent = post.replyCount || 0;
+                document.getElementById('sidebar-category').textContent = post.category;
+                document.getElementById('sidebar-views').textContent = post.viewCount || 0;
+                document.getElementById('sidebar-replies').textContent = post.replyCount || 0;
+                document.getElementById('sidebar-date').textContent = formatDate(post.createdAt);
+
+                // 加载资源
+                loadResources();
+                // 加载评论
+                loadComments(0);
+            })
+            .catch(error => console.error('加载帖子失败:', error));
+    }
+
+    function loadResources() {
+        fetch(`/api/resources/post-list/${postId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.data && data.data.length > 0) {
+                    const resourcesList = document.getElementById('resources-list');
+                    resourcesList.innerHTML = '';
+                    data.data.forEach(resource => {
+                        const item = document.createElement('div');
+                        item.className = 'mb-2';
+                        item.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>
+                                    📄 ${escapeHtml(resource.fileName)} 
+                                    <small class="text-muted">(${formatFileSize(resource.fileSize)})</small>
+                                </span>
+                                <a href="/api/resources/download/${resource.id}" class="btn btn-sm btn-outline-primary">下载</a>
+                            </div>
+                        `;
+                        resourcesList.appendChild(item);
+                    });
+                    document.getElementById('resources-section').style.display = 'block';
+                }
+            })
+            .catch(error => console.error('加载资源失败:', error));
+    }
+
+    function loadComments(page) {
+        currentCommentPage = page;
+        fetch(`/api/comments/post/${postId}?page=${page}&size=${commentSize}`)
+            .then(response => response.json())
+            .then(data => {
+                renderComments(data.data);
+            })
+            .catch(error => console.error('加载评论失败:', error));
+    }
+
+    function renderComments(pageData) {
+        const container = document.getElementById('comments-container');
+        container.innerHTML = '';
+
+        if (!pageData || !pageData.content || pageData.content.length === 0) {
+            container.innerHTML = '<p class="text-muted">暂无评论</p>';
+            document.getElementById('comment-divider').style.display = 'none';
+        } else {
+            document.getElementById('comment-divider').style.display = 'block';
+            pageData.content.forEach(comment => {
+                const commentDiv = document.createElement('div');
+                commentDiv.className = 'card mb-3';
+                commentDiv.innerHTML = `
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <strong>${comment.username || '未知用户'}</strong>
+                            <small class="text-muted">${formatDate(comment.createdAt)}</small>
+                        </div>
+                        <p class="card-text mt-2">${escapeHtml(comment.content)}</p>
+                        <button class="btn btn-sm btn-outline-primary" onclick="replyToComment(${comment.id})">回复</button>
+                    </div>
+                    <div id="replies-${comment.id}"></div>
+                `;
+                container.appendChild(commentDiv);
+
+                // 加载回复
+                if (comment.replies && comment.replies.length > 0) {
+                    const repliesContainer = document.getElementById(`replies-${comment.id}`);
+                    comment.replies.forEach(reply => {
+                        const replyDiv = document.createElement('div');
+                        replyDiv.className = 'card-body border-start bg-light';
+                        replyDiv.innerHTML = `
+                            <div class="d-flex justify-content-between">
+                                <strong>${reply.username || '未知用户'}</strong>
+                                <small class="text-muted">${formatDate(reply.createdAt)}</small>
+                            </div>
+                            <p class="mt-2">${escapeHtml(reply.content)}</p>
+                        `;
+                        repliesContainer.appendChild(replyDiv);
+                    });
+                }
+            });
+        }
+
+        document.getElementById('comment-count').textContent = pageData.totalElements || 0;
+
+        // 渲染分页
+        if (pageData.totalPages > 1) {
+            renderCommentPagination(pageData.totalPages);
+        }
+    }
+
+    function renderCommentPagination(totalPages) {
+        const pagination = document.getElementById('comment-pagination');
+        pagination.innerHTML = '';
+
+        if (currentCommentPage > 0) {
+            const prev = document.createElement('li');
+            prev.className = 'page-item';
+            prev.innerHTML = `<a class="page-link" onclick="loadComments(${currentCommentPage - 1})">上一页</a>`;
+            pagination.appendChild(prev);
+        }
+
+        for (let i = 0; i < totalPages && i < 3; i++) {
+            const li = document.createElement('li');
+            li.className = 'page-item' + (i === currentCommentPage ? ' active' : '');
+            li.innerHTML = `<a class="page-link" onclick="loadComments(${i})">${i + 1}</a>`;
+            pagination.appendChild(li);
+        }
+
+        if (currentCommentPage < totalPages - 1) {
+            const next = document.createElement('li');
+            next.className = 'page-item';
+            next.innerHTML = `<a class="page-link" onclick="loadComments(${currentCommentPage + 1})">下一页</a>`;
+            pagination.appendChild(next);
+        }
+
+        document.getElementById('comment-pagination-section').style.display = 'block';
+    }
+
+    document.getElementById('commentForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (!user) {
+            alert('请先登录');
+            return;
+        }
+
+        const content = document.getElementById('commentContent').value;
+        const formData = new URLSearchParams();
+        formData.append('postId', postId);
+        formData.append('userId', user.id);
+        formData.append('content', content);
+
+        try {
+            const response = await fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            });
+            const data = await response.json();
+            if (data.code === 200) {
+                alert('评论成功');
+                document.getElementById('commentContent').value = '';
+                loadComments(0);
+            } else {
+                alert('评论失败: ' + data.message);
+            }
+        } catch (error) {
+            alert('评论失败，请重试');
+        }
+    });
+
+    function replyToPost() {
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (!user) {
+            alert('请先登录');
+            window.location.href = '/login';
+        } else {
+            document.getElementById('commentContent').focus();
+        }
+    }
+
+    function replyToComment(commentId) {
+        alert('需要实现嵌套回复功能');
+    }
+
+    function sharePost() {
+        const url = window.location.href;
+        const text = `Check out this post: ${document.getElementById('post-title').textContent}`;
+        alert(`分享链接: ${url}`);
+    }
+
+    function editPost() {
+        alert('需要实现编辑功能');
+    }
+
+    function deletePost() {
+        if (confirm('确定要删除这篇帖子吗？')) {
+            fetch(`/api/posts/${postId}`, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 200) {
+                        alert('删除成功');
+                        window.location.href = '/post-list';
+                    }
+                });
+        }
+    }
+
+    // 辅助函数
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+</script>
+</body>
+</html>

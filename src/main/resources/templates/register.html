@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户注册 - 校园论坛</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/}">🎓 校园论坛</a>
+    </div>
+</nav>
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-5">用户注册</h2>
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                            <small id="usernameFeedback" class="form-text text-danger"></small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">邮箱</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <small id="emailFeedback" class="form-text text-danger"></small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <small class="form-text text-muted">至少6个字符</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">确认密码</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                            <small id="passwordFeedback" class="form-text text-danger"></small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="realname" class="form-label">真实姓名（可选）</label>
+                            <input type="text" class="form-control" id="realname" name="realname">
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+                            <label class="form-check-label" for="agreeTerms">
+                                我同意遵守论坛规则和服务条款
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">注册</button>
+                    </form>
+
+                    <hr>
+                    <p class="text-center">已有账户？ <a th:href="@{/login}">立即登录</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="bg-dark text-white text-center py-4 mt-5">
+    <div class="container">
+        <p class="mb-0">&copy; 2026 校园论坛. 帮助学生互相交流、分享资源。</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/utils.js}"></script>
+<script>
+    const registerForm = document.getElementById('registerForm');
+
+    // 实时检查用户名
+    document.getElementById('username').addEventListener('blur', async function() {
+        const username = this.value;
+        if (username.length < 3) {
+            document.getElementById('usernameFeedback').textContent = '用户名至少需要3个字符';
+            return;
+        }
+        
+        const response = await fetch('/api/auth/check-username/' + encodeURIComponent(username));
+        const data = await response.json();
+        if (data.data.exists) {
+            document.getElementById('usernameFeedback').textContent = '该用户名已被使用';
+        } else {
+            document.getElementById('usernameFeedback').textContent = '';
+        }
+    });
+
+    // 实时检查邮箱
+    document.getElementById('email').addEventListener('blur', async function() {
+        const email = this.value;
+        if (!email || !email.includes('@')) {
+            document.getElementById('emailFeedback').textContent = '请输入有效的邮箱';
+            return;
+        }
+        
+        const response = await fetch('/api/auth/check-email/' + encodeURIComponent(email));
+        const data = await response.json();
+        if (data.data.exists) {
+            document.getElementById('emailFeedback').textContent = '该邮箱已被注册';
+        } else {
+            document.getElementById('emailFeedback').textContent = '';
+        }
+    });
+
+    // 密码匹配检验
+    document.getElementById('confirmPassword').addEventListener('input', function() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = this.value;
+        if (password && confirmPassword && password !== confirmPassword) {
+            document.getElementById('passwordFeedback').textContent = '两次输入的密码不一致';
+        } else {
+            document.getElementById('passwordFeedback').textContent = '';
+        }
+    });
+
+    registerForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const realname = document.getElementById('realname').value;
+
+        // 验证
+        if (username.length < 3) {
+            alert('用户名至少需要3个字符');
+            return;
+        }
+        if (password.length < 6) {
+            alert('密码至少需要6个字符');
+            return;
+        }
+        if (password !== confirmPassword) {
+            alert('两次输入的密码不一致');
+            return;
+        }
+
+        try {
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('email', email);
+            formData.append('password', password);
+            if (realname) {
+                formData.append('realname', realname);
+            }
+
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.code === 200) {
+                alert('注册成功，请登录');
+                window.location.href = '/login';
+            } else {
+                alert('注册失败: ' + data.message);
+            }
+        } catch (error) {
+            alert('注册失败，请重试');
+            console.error('注册错误:', error);
+        }
+    });
+</script>
+</body>
+</html>

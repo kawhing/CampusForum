@@ -1,0 +1,48 @@
+# Maven
+.mvn/
+mvnc
+mvnw.cmd
+*.versionsBackup
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Build
+target/
+build/
+dist/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+.docker
+.dockerignore
+
+# 其他
+README.md
+*.md
+.env.local
+.env.*.local
+logs/
+tmp/
+*.jar
+*.war
