@@ -217,11 +217,105 @@
     function redirectToNewPost() {
         const user = JSON.parse(localStorage.getItem('user') || 'null');
         if (!user) {
-            alert('请先登录');
-            window.location.href = '/login';
+            // 保存用户想要访问的目标页面
+            sessionStorage.setItem('redirectAfterLogin', '/post-edit');
+            // 弹出登录窗口
+            openLoginModal();
         } else {
-            // 实际应跳转到发布页面，这里简化为弹窗
-            alert('跳转到发布新帖页面 (需要实现发布页面)');
+            // 用户已登录，直接跳转到发布页面
+            window.location.href = '/post-edit';
+        }
+    }
+
+    function openLoginModal() {
+        // 创建登录模态框
+        const modalHtml = `
+            <div class="modal fade" id="quickLoginModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">用户登录</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="quickLoginUsername" class="form-label">用户名</label>
+                                <input type="text" class="form-control" id="quickLoginUsername" placeholder="请输入用户名">
+                            </div>
+                            <div class="mb-3">
+                                <label for="quickLoginPassword" class="form-label">密码</label>
+                                <input type="password" class="form-control" id="quickLoginPassword" placeholder="请输入密码">
+                            </div>
+                            <div id="loginError" class="alert alert-danger" style="display:none;"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-primary" onclick="handleQuickLogin()">登录</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // 检查是否已存在模态框
+        let modal = document.getElementById('quickLoginModal');
+        if (!modal) {
+            const container = document.createElement('div');
+            container.innerHTML = modalHtml;
+            document.body.appendChild(container);
+            modal = document.getElementById('quickLoginModal');
+        }
+        
+        // 显示模态框
+        const loginModal = new bootstrap.Modal(modal);
+        loginModal.show();
+    }
+
+    function handleQuickLogin() {
+        const username = document.getElementById('quickLoginUsername').value.trim();
+        const password = document.getElementById('quickLoginPassword').value;
+        
+        if (!username || !password) {
+            showLoginError('用户名和密码不能为空');
+            return;
+        }
+
+        fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.code === 200) {
+                localStorage.setItem('user', JSON.stringify(data.data.user));
+                localStorage.setItem('token', data.data.token);
+                
+                // 关闭模态框
+                const modal = bootstrap.Modal.getInstance(document.getElementById('quickLoginModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                
+                // 跳转到保存的目标页面，或默认跳转到发布页面
+                const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/post-edit';
+                sessionStorage.removeItem('redirectAfterLogin');
+                window.location.href = redirectUrl;
+            } else {
+                showLoginError(data.message || '登录失败，请检查用户名和密码');
+            }
+        })
+        .catch(error => {
+            console.error('登录请求失败:', error);
+            showLoginError('登录请求失败，请重试');
+        });
+    }
+
+    function showLoginError(message) {
+        const errorDiv = document.getElementById('loginError');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
         }
     }
 
