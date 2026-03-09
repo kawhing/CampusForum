@@ -97,6 +97,12 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        
+        <dependency>
+            <groupId>org.thymeleaf.extras</groupId>
+            <artifactId>thymeleaf-extras-springsecurity5</artifactId>
+            <!-- 版本由 spring-boot-starter-parent 自动管理，不需要写版本号 -->
+        </dependency>
     </dependencies>
 
     <build>

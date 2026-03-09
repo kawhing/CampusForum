@@ -1,29 +1,72 @@
 <!DOCTYPE html>
-<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<html lang="zh-CN"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>校园论坛 - 首页</title>
+    <!-- ✅ 修复1: CDN 保持用于外网访问，同时保证 th:href 用于本地静态资源 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
+
+<!-- ✅ 修复2: 导航栏登录状态由 Thymeleaf + Spring Security 在服务端渲染 -->
+<!-- 不再依赖 JS 读取 localStorage，彻底解决刷新/跨设备状态丢失问题 -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
     <div class="container">
         <a class="navbar-brand" th:href="@{/}">🎓 校园论坛</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <button class="navbar-toggler" type="button"
+                data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
                 <li class="nav-item">
                     <a class="nav-link active" th:href="@{/}">首页</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/post-list}">帖子</a>
                 </li>
-                <li class="nav-item" id="nav-user-menu">
-                    <a class="nav-link" th:href="@{/login}">登录/注册</a>
+
+                <!-- 未登录时显示"登录/注册" -->
+                <li class="nav-item" sec:authorize="isAnonymous()">
+                    <a class="nav-link btn btn-outline-light btn-sm px-3 ms-2"
+                       th:href="@{/login}">登录 / 注册</a>
+                </li>
+
+                <!-- ✅ 修复3: 已登录时显示用户下拉菜单，完全由服务端渲染，不依赖 JS -->
+                <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                    <a class="nav-link dropdown-toggle" href="#"
+                       id="userDropdown" role="button"
+                       data-bs-toggle="dropdown"
+                       aria-expanded="false">
+                        👤 <span sec:authentication="name"></span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item"
+                               th:href="@{/profile/{u}(u=${#authentication.name})}">
+                                👤 个人资料
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/post/edit/0}">
+                                ✏️ 发布新帖
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <!-- ✅ 修复4: 退出登录走 Spring Security 标准 /logout，清除 Session -->
+                            <form th:action="@{/logout}" method="post" class="d-inline w-100">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    🚪 退出登录
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
                 </li>
             </ul>
         </div>
@@ -34,8 +77,15 @@
     <div class="container text-center">
         <h1 class="display-4 fw-bold mb-4">欢迎来到校园论坛</h1>
         <p class="lead mb-4">一个让同学们互相交流、分享资源、互相帮助的平台</p>
-        <button class="btn btn-light btn-lg me-2" onclick="location.href='/post-list'">浏览帖子</button>
-        <button class="btn btn-outline-light btn-lg" onclick="openLoginModal()">立即参与</button>
+        <a th:href="@{/post-list}" class="btn btn-light btn-lg me-2">浏览帖子</a>
+
+        <!-- 未登录：跳转到登录页 -->
+        <a th:href="@{/login}" sec:authorize="isAnonymous()"
+           class="btn btn-outline-light btn-lg">立即参与</a>
+
+        <!-- 已登录：直接去发帖 -->
+        <a th:href="@{/post/edit/0}" sec:authorize="isAuthenticated()"
+           class="btn btn-outline-light btn-lg">发布帖子</a>
     </div>
 </div>
 
@@ -68,7 +118,11 @@
         <div class="col-12">
             <h2 class="mb-4">最新帖子</h2>
             <div id="latest-posts" class="row">
-                <!-- 最新帖子列表将由JavaScript动态加载 -->
+                <div class="col-12 text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -94,43 +148,14 @@
     </div>
 </footer>
 
-<!-- 登录弹窗 -->
-<div class="modal fade" id="loginModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">登录</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="loginForm">
-                    <div class="mb-3">
-                        <label for="loginUsername" class="form-label">用户名</label>
-                        <input type="text" class="form-control" id="loginUsername" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="loginPassword" class="form-label">密码</label>
-                        <input type="password" class="form-control" id="loginPassword" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                <button type="button" class="btn btn-primary" onclick="handleLogin()">登录</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script th:src="@{/js/api.js}"></script>
 <script th:src="@{/js/utils.js}"></script>
-<script th:src="@{/js/main.js}"></script>
 <script>
-    // 加载最新帖子（首页显示最新的6条）
-    document.addEventListener('DOMContentLoaded', function() {
+    // ✅ 修复5: 移除所有 localStorage 登录状态逻辑
+    // 导航栏状态已由服务端 Thymeleaf 渲染，这里只负责加载帖子数据
+
+    document.addEventListener('DOMContentLoaded', function () {
         loadLatestPosts();
-        updateUserNav();
     });
 
     function loadLatestPosts() {
@@ -141,133 +166,44 @@
                 container.innerHTML = '';
                 if (data.data && data.data.content && data.data.content.length > 0) {
                     data.data.content.forEach(post => {
-                        const card = createPostCard(post);
-                        container.appendChild(card);
+                        container.appendChild(createPostCard(post));
                     });
                 } else {
-                    container.innerHTML = '<div class="col-12"><p class="text-muted">暂无帖子</p></div>';
+                    container.innerHTML = '<div class="col-12"><p class="text-muted text-center">暂无帖子，<a href="/post/edit/0">来发第一帖吧！</a></p></div>';
                 }
             })
-            .catch(error => console.error('加载帖子失败:', error));
+            .catch(error => {
+                console.error('加载帖子失败:', error);
+                const container = document.getElementById('latest-posts');
+                container.innerHTML = '<div class="col-12"><p class="text-danger text-center">加载失败，请刷新重试</p></div>';
+            });
     }
 
     function createPostCard(post) {
         const div = document.createElement('div');
         div.className = 'col-md-6 mb-4';
+        const content = post.content ? escapeHtml(post.content.substring(0, 100)) : '';
         div.innerHTML = `
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">${escapeHtml(post.title)}</h5>
-                    <p class="card-text text-muted">${escapeHtml(post.content.substring(0, 100))}...</p>
+                    <h5 class="card-title">
+                        <a href="/post/${post.id}" class="text-decoration-none stretched-link">
+                            ${escapeHtml(post.title)}
+                        </a>
+                    </h5>
+                    <p class="card-text text-muted">${content}${post.content && post.content.length > 100 ? '...' : ''}</p>
                     <div class="d-flex justify-content-between align-items-center">
                         <small class="text-muted">
-                            <strong>${post.username || '未知用户'}</strong> · 
-                            ${post.category} · ${formatDate(post.createdAt)}
+                            <strong>${escapeHtml(post.username || '未知用户')}</strong> ·
+                            <span class="badge bg-info text-dark">${escapeHtml(post.category || '')}</span> ·
+                            ${formatDate(post.createdAt)}
                         </small>
                         <span class="badge bg-secondary">${post.viewCount || 0} 浏览</span>
                     </div>
                 </div>
-                <div class="card-footer bg-light">
-                    <a href="/post/${post.id}" class="btn btn-sm btn-primary">查看详情</a>
-                </div>
             </div>
         `;
         return div;
-    }
-
-    function openLoginModal() {
-        // 保存用户想要访问的目标页面
-        sessionStorage.setItem('redirectAfterLogin', '/post/edit/0');
-        
-        // 创建登录模态框
-        const modalHtml = `
-            <div class="modal fade" id="indexLoginModal" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">用户登录</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label for="indexLoginUsername" class="form-label">用户名</label>
-                                <input type="text" class="form-control" id="indexLoginUsername" placeholder="请输入用户名">
-                            </div>
-                            <div class="mb-3">
-                                <label for="indexLoginPassword" class="form-label">密码</label>
-                                <input type="password" class="form-control" id="indexLoginPassword" placeholder="请输入密码">
-                            </div>
-                            <div id="indexLoginError" class="alert alert-danger" style="display:none;"></div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                            <button type="button" class="btn btn-primary" onclick="handleIndexLogin()">登录</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // 检查是否已存在模态框
-        let modal = document.getElementById('indexLoginModal');
-        if (!modal) {
-            const container = document.createElement('div');
-            container.innerHTML = modalHtml;
-            document.body.appendChild(container);
-            modal = document.getElementById('indexLoginModal');
-        }
-        
-        // 显示模态框
-        const loginModal = new bootstrap.Modal(modal);
-        loginModal.show();
-    }
-
-    function handleIndexLogin() {
-        const username = document.getElementById('indexLoginUsername').value.trim();
-        const password = document.getElementById('indexLoginPassword').value;
-        
-        if (!username || !password) {
-            showIndexLoginError('用户名和密码不能为空');
-            return;
-        }
-
-        fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.code === 200) {
-                localStorage.setItem('user', JSON.stringify(data.data.user));
-                localStorage.setItem('token', data.data.token);
-                
-                // 关闭模态框
-                const modal = bootstrap.Modal.getInstance(document.getElementById('indexLoginModal'));
-                if (modal) {
-                    modal.hide();
-                }
-                
-                // 跳转到保存的目标页面，或默认跳转到发布页面
-                const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/post/edit/0';
-                sessionStorage.removeItem('redirectAfterLogin');
-                window.location.href = redirectUrl;
-            } else {
-                showIndexLoginError(data.message || '登录失败，请检查用户名和密码');
-            }
-        })
-        .catch(error => {
-            console.error('登录请求失败:', error);
-            showIndexLoginError('登录请求失败，请重试');
-        });
-    }
-
-    function showIndexLoginError(message) {
-        const errorDiv = document.getElementById('indexLoginError');
-        if (errorDiv) {
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
     }
 </script>
 </body>

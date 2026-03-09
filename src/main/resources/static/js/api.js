@@ -11,12 +11,6 @@ async function apiRequest(url, options = {}) {
         },
     };
 
-    // 如果有认证令牌，添加到请求头
-    const token = getAuthToken();
-    if (token) {
-        defaultOptions.headers['Authorization'] = token;
-    }
-
     const finalOptions = { ...defaultOptions, ...options };
 
     try {

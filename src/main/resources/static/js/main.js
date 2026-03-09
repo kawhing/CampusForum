@@ -1,21 +1,6 @@
 // main.js - 主要前端逻辑
 
 /**
- * 页面初始化
- */
-document.addEventListener('DOMContentLoaded', function() {
-    // 初始化用户导航
-    updateUserNav();
-    
-    // 检查用户登录状态
-    if (isUserLoggedIn()) {
-        // 用户已登录
-    } else {
-        // 用户未登录
-    }
-});
-
-/**
  * 全局错误处理
  */
 window.addEventListener('error', function(event) {

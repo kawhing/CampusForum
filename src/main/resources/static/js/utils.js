@@ -60,79 +60,6 @@ function formatFileSize(bytes) {
 }
 
 /**
- * 保存到本地存储
- */
-function saveToLocalStorage(key, value) {
-    try {
-        localStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-        console.error('保存到本地存储失败:', error);
-    }
-}
-
-/**
- * 从本地存储读取
- */
-function getFromLocalStorage(key, defaultValue = null) {
-    try {
-        const value = localStorage.getItem(key);
-        return value ? JSON.parse(value) : defaultValue;
-    } catch (error) {
-        console.error('从本地存储读取失败:', error);
-        return defaultValue;
-    }
-}
-
-/**
- * 清除本地存储
- */
-function clearLocalStorage(key) {
-    try {
-        localStorage.removeItem(key);
-    } catch (error) {
-        console.error('清除本地存储失败:', error);
-    }
-}
-
-/**
- * 显示成功提示
- */
-function showSuccess(message) {
-    const alert = document.createElement('div');
-    alert.className = 'alert alert-success alert-dismissible fade show';
-    alert.setAttribute('role', 'alert');
-    alert.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.body.insertBefore(alert, document.body.firstChild);
-    setTimeout(() => alert.remove(), 3000);
-}
-
-/**
- * 显示错误提示
- */
-function showError(message) {
-    const alert = document.createElement('div');
-    alert.className = 'alert alert-danger alert-dismissible fade show';
-    alert.setAttribute('role', 'alert');
-    alert.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.body.insertBefore(alert, document.body.firstChild);
-    setTimeout(() => alert.remove(), 3000);
-}
-
-/**
- * 验证电子邮件地址
- */
-function validateEmail(email) {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email);
-}
-
-/**
  * 防抖函数
  */
 function debounce(func, wait) {
@@ -214,36 +141,6 @@ function getCurrentUser() {
  */
 function getAuthToken() {
     return localStorage.getItem('token');
-}
-
-/**
- * 更新用户导航菜单
- */
-function updateUserNav() {
-    const navUserMenu = document.getElementById('nav-user-menu');
-    const user = getCurrentUser();
-
-    if (!navUserMenu) return;
-
-    if (user) {
-        navUserMenu.innerHTML = `
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                    👤 ${user.username}
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                    <li><a class="dropdown-item" href="/profile/${user.username}">个人资料</a></li>
-                    <li><a class="dropdown-item" href="/post/edit/0">发布新帖</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" onclick="logout()">退出登录</a></li>
-                </ul>
-            </div>
-        `;
-    } else {
-        navUserMenu.innerHTML = `
-            <a class="nav-link" href="/login">登录</a>
-        `;
-    }
 }
 
 /**
