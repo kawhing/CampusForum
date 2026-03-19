@@ -440,7 +440,8 @@ export default function QuestionDetail() {
     const hasViewed = viewed.includes(id);
 
     if (!hasViewed) {
-      localStorage.setItem(viewedKey, JSON.stringify([...viewed, id]));
+      const nextViewed = [...viewed, id].slice(-100);
+      localStorage.setItem(viewedKey, JSON.stringify(nextViewed));
     }
 
     dispatch(fetchQuestion({ id, countView: !hasViewed }));

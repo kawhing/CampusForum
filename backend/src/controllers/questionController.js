@@ -84,7 +84,7 @@ const getQuestion = async (req, res) => {
       return res.status(400).json({ message: 'Invalid question ID' });
     }
 
-    const shouldCountView = !['false', '0'].includes((req.query.countView || '').toString());
+    const shouldSkipView = ['false', '0'].includes((req.query.countView || '').toString());
 
     const question = await Question.findById(id).populate('createdBy', 'username');
 
@@ -92,7 +92,7 @@ const getQuestion = async (req, res) => {
       return res.status(404).json({ message: 'Question not found' });
     }
 
-    if (shouldCountView) {
+    if (!shouldSkipView) {
       const viewerId = req.user?._id?.toString();
       const alreadyViewed =
         viewerId && question.viewedBy?.some((uid) => uid.toString() === viewerId);

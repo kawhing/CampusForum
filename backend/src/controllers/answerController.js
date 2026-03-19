@@ -77,9 +77,14 @@ const getAnswers = async (req, res) => {
     let favoriteSet = new Set();
 
     if (viewerId) {
-      const user = await User.findById(viewerId).select('favorites');
-      if (user?.favorites?.length) {
-        favoriteSet = new Set(user.favorites.map((fid) => fid.toString()));
+      const favorites = req.user?.favorites;
+      if (favorites?.length) {
+        favoriteSet = new Set(favorites.map((fid) => fid.toString()));
+      } else {
+        const user = await User.findById(viewerId).select('favorites');
+        if (user?.favorites?.length) {
+          favoriteSet = new Set(user.favorites.map((fid) => fid.toString()));
+        }
       }
     }
 
