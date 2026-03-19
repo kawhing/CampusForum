@@ -43,7 +43,7 @@
 3. 在PowerShell中验证：
    ```powershell
    docker --version
-   docker-compose --version
+   docker compose version
    ```
 
 > 📋 **完整部署指南（含分支说明）请查看 [DEPLOYMENT.md](DEPLOYMENT.md)**
@@ -60,7 +60,7 @@ start.bat
 
 或在PowerShell/CMD中运行：
 ```powershell
-docker-compose up -d
+docker compose up -d
 ```
 
 #### Linux/Mac用户
@@ -72,9 +72,9 @@ chmod +x start.sh
 ./start.sh
 ```
 
-或直接用docker-compose：
+或直接用docker compose：
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### 方式二：本地开发运行
@@ -238,22 +238,22 @@ make run
 ### Docker命令
 ```bash
 # 构建镜像
-docker-compose build
+docker compose build
 
 # 启动容器（后台运行）
-docker-compose up -d
+docker compose up -d
 
 # 停止容器
-docker-compose down
+docker compose down
 
 # 查看日志（实时）
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # 查看运行中的容器
-docker-compose ps
+docker compose ps
 
 # 重启容器
-docker-compose restart
+docker compose restart
 
 # 查看容器资源使用
 docker stats
@@ -310,15 +310,15 @@ NODE_ENV=production
 ## 🐛 故障排除
 
 ### Docker启动后无法访问
-1. 检查容器是否运行：`docker-compose ps`
-2. 查看日志：`docker-compose logs backend`
+1. 检查容器是否运行：`docker compose ps`
+2. 查看日志：`docker compose logs backend`
 3. 检查防火墙是否阻止80或5000端口
 4. 确保没有其他应用占用端口
 
 ### 数据库连接失败
-1. 检查MongoDB容器状态：`docker-compose logs mongodb`
+1. 检查MongoDB容器状态：`docker compose logs mongodb`
 2. 等待数据库完全初始化（约10-15秒）
-3. 验证连接：`docker-compose exec mongodb mongosh --eval "db.adminCommand('ping')"`
+3. 验证连接：`docker compose exec mongodb mongosh --eval "db.adminCommand('ping')"`
 
 ### 应用启动缓慢
 1. Docker首次启动需要拉取镜像并初始化，耐心等待

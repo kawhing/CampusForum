@@ -1,6 +1,11 @@
 import axios from 'axios';
-import store from '../store';
-import { logout } from '../store/slices/authSlice';
+
+// Holds the Redux store reference, injected after store creation to avoid
+// a circular dependency: api -> store -> authSlice -> api
+let _store;
+export const injectStore = (store) => { _store = store; };
+
+let _isLoggingOut = false;
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
@@ -22,9 +27,17 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      store.dispatch(logout());
-      window.location.href = '/login';
+    if (error.response?.status === 401 && !_isLoggingOut) {
+      _isLoggingOut = true;
+      if (_store) {
+        import('../store/slices/authSlice').then(({ logout }) => {
+          _store.dispatch(logout());
+          window.location.href = '/login';
+        });
+      } else {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

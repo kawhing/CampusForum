@@ -92,16 +92,16 @@ cp .env.example .env
 # 用编辑器打开 .env，将 JWT_SECRET 改为随机字符串
 
 # 2. 构建并启动
-docker-compose up -d
+docker compose up -d
 
 # 3. 查看状态
-docker-compose ps
+docker compose ps
 
 # 4. 查看实时日志
-docker-compose logs -f
+docker compose logs -f
 
 # 5. 停止
-docker-compose down
+docker compose down
 ```
 
 ---
@@ -136,32 +136,32 @@ make run
 
 ```bash
 # 查看所有容器状态
-docker-compose ps
+docker compose ps
 
 # 查看后端日志
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # 查看前端日志
-docker-compose logs -f frontend
+docker compose logs -f frontend
 
 # 查看数据库日志
-docker-compose logs -f mongodb
+docker compose logs -f mongodb
 
 # 重启某个服务
-docker-compose restart backend
+docker compose restart backend
 
 # 停止并删除容器（保留数据库数据卷）
-docker-compose down
+docker compose down
 
 # 停止并删除容器及所有数据（慎用！）
-docker-compose down -v
+docker compose down -v
 
 # 进入 MongoDB 调试
-docker-compose exec mongodb mongosh anon-qa
+docker compose exec mongodb mongosh anon-qa
 
 # 重新构建镜像（代码更新后）
-docker-compose build --no-cache
-docker-compose up -d
+docker compose build --no-cache
+docker compose up -d
 ```
 
 ---
@@ -193,7 +193,7 @@ lsof -i :80
 ### MongoDB 连接失败
 
 ```bash
-docker-compose logs mongodb
+docker compose logs mongodb
 # 等待 10-15 秒让 MongoDB 完全初始化后再访问
 ```
 
@@ -205,8 +205,8 @@ docker-compose logs mongodb
 
 ```bash
 # 清理缓存后重新构建
-docker-compose down
+docker compose down
 docker system prune -f
-docker-compose build --no-cache
-docker-compose up -d
+docker compose build --no-cache
+docker compose up -d
 ```

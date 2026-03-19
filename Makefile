@@ -2,6 +2,9 @@
 
 .PHONY: help build run stop logs clean test install docker-build docker-up docker-down
 
+# 自动检测 docker compose (v2) 或 docker-compose (v1)
+DC := $(shell docker compose version > /dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
+
 help:
 	@echo "匿名问答平台 (Anonymous Q&A) - 快速命令"
 	@echo ""
@@ -43,23 +46,23 @@ clean:
 	rm -rf backend/node_modules
 
 docker-build:
-	docker-compose build --no-cache
+	$(DC) build --no-cache
 
 docker-up:
 	@if [ ! -f .env ]; then cp .env.example .env; fi
-	docker-compose up -d
+	$(DC) up -d
 	@echo "应用启动中，请等待..."
 	@echo "前端访问：http://localhost"
 	@echo "后端API：http://localhost:5000/api"
 
 docker-down:
-	docker-compose down
+	$(DC) down
 
 docker-logs:
-	docker-compose logs -f
+	$(DC) logs -f
 
 docker-ps:
-	docker-compose ps
+	$(DC) ps
 
 # 一键启动（完整Docker流程）
 start: docker-build docker-up
@@ -76,9 +79,9 @@ restart: docker-down docker-up
 # 查看所有容器状态
 status:
 	@echo "Container Status:"
-	docker-compose ps
+	$(DC) ps
 
 # 清理所有Docker资源（含数据卷）
 docker-clean:
-	docker-compose down -v
+	$(DC) down -v
 	@echo "已清理所有Docker资源"
