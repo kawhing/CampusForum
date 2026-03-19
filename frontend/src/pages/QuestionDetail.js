@@ -441,7 +441,10 @@ export default function QuestionDetail() {
     const hasViewed = viewed.includes(id);
 
     if (!hasViewed) {
-      const nextViewed = [...viewed, id].slice(-MAX_VIEWED_QUESTIONS);
+      const nextViewed = viewed.concat(id);
+      if (nextViewed.length > MAX_VIEWED_QUESTIONS) {
+        nextViewed.splice(0, nextViewed.length - MAX_VIEWED_QUESTIONS);
+      }
       localStorage.setItem(viewedKey, JSON.stringify(nextViewed));
     }
 
