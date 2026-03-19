@@ -1,38 +1,35 @@
-# 校园论坛 (CampusForum) 
+# 校园论坛 (CampusForum)
 
-一个功能完善、界面美观的校园在线论坛系统，帮助学校同学互相交流、分享资源、互相帮助。
+一个功能完善、界面美观的校园匿名问答平台，帮助学校同学互相交流、分享知识、互相帮助。
 
 ## 🎯 项目特性
 
 - **用户认证系统** - 注册、登录、个人资料管理
-- **帖子管理** - 发布、编辑、删除、分类管理、搜索功能
-- **评论系统** - 支持层级回复、实时更新
-- **文件分享** - 支持上传/下载文件，单个文件不超过20MB
+- **匿名问答** - 发布、回答、搜索问题
+- **评论系统** - 支持层级回复
+- **管理后台** - 用户管理、内容审核
 - **响应式设计** - 完美适配桌面、平板、手机等各种设备
-- **美观UI** - 基于Bootstrap 5的现代化界面设计
-- **Docker部署** - 一健启动，开箱即用
+- **美观UI** - 基于Ant Design的现代化界面设计
+- **Docker部署** - 一键启动，开箱即用
 
 ## 🛠️ 技术栈
 
 | 层级 | 技术 | 版本 |
 |------|------|------|
-| **后端** | Spring Boot | 2.7.14 |
-| **Web框架** | Spring Web MVC | - |
-| **ORM** | Spring Data JPA | - |
-| **数据库** | MySQL | 8.0 |
-| **前端模板** | Thymeleaf | - |
-| **UI框架** | Bootstrap | 5.1.3 |
-| **JavaScript** | Vanilla JS (原生) | ES6+ |
-| **构建工具** | Maven | 3.6+ |
+| **后端** | Node.js + Express | 18+ |
+| **数据库** | MongoDB | 6.0 |
+| **前端** | React | 18 |
+| **UI框架** | Ant Design | 5 |
+| **状态管理** | Redux Toolkit | 2 |
+| **路由** | React Router | 6 |
 | **容器化** | Docker & Docker Compose | 最新版 |
 
 ## 📋 系统要求
 
 ### 本地开发环境
-- Java 11 或更高版本
-- Maven 3.6+
-- MySQL 8.0+
-- Node.js 14+ (可选，用于前端构建)
+- Node.js 18 或更高版本
+- npm 8+
+- MongoDB 6.0+
 
 ### Docker部署（推荐）
 - Docker 20.0+
@@ -80,47 +77,50 @@ docker-compose up -d
 
 ### 方式二：本地开发运行
 
-#### 1. 配置数据库
-确保MySQL服务运行在本地3306端口，创建数据库：
-```sql
-CREATE DATABASE campus_forum DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-执行初始化脚本：
+#### 1. 配置环境变量
+复制并修改环境变量文件：
 ```bash
-mysql -u root -p campus_forum < src/main/resources/db/init.sql
+cp .env.example .env
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
 #### 2. 安装依赖
 ```bash
-mvn clean install
+make install
 ```
 
-#### 3. 编译项目
+或分别安装：
 ```bash
-mvn package -DskipTests
+cd backend && npm install
+cd frontend && npm install
 ```
 
-#### 4. 运行应用
+#### 3. 运行应用
 ```bash
-mvn spring-boot:run
+make run
 ```
 
-或用IDE导入Maven项目，直接运行`CampusForumApplication`类。
+或分别运行：
+```bash
+# 后端（端口5000）
+cd backend && npm start
+
+# 前端（端口3000，开发模式）
+cd frontend && npm start
+```
 
 ## 📱 应用访问
 
 ### Docker部署后
-- **应用地址**: http://localhost:8080
-- **默认管理员账号**: 
-  - 用户名: `admin`
-  - 密码: `admin123`
+- **前端地址**: http://localhost:80
+- **后端API**: http://localhost:5000
 
 等待15-20秒让数据库完全初始化后即可访问。
 
 ### 本地开发运行
-- **应用地址**: http://localhost:8080
-- **API文档**: http://localhost:8080/swagger-ui.html (如配置)
+- **前端地址**: http://localhost:3000
+- **后端API**: http://localhost:5000
 
 ## 📚 API接口文档
 
@@ -128,147 +128,109 @@ mvn spring-boot:run
 ```
 POST   /api/auth/register          - 用户注册
 POST   /api/auth/login             - 用户登录
-POST   /api/auth/logout            - 用户登出
-GET    /api/auth/check-username/:username  - 检查用户名
-GET    /api/auth/check-email/:email        - 检查邮箱
 ```
 
-### 帖子管理
+### 问题管理
 ```
-POST   /api/posts                  - 创建帖子
-GET    /api/posts                  - 获取帖子列表（分页）
-GET    /api/posts/:id              - 获取帖子详情
-PUT    /api/posts/:id              - 编辑帖子
-DELETE /api/posts/:id              - 删除帖子
-GET    /api/posts/category/:category - 按分类获取帖子
-GET    /api/posts/user/:userId     - 获取用户帖子
-GET    /api/posts/search           - 搜索帖子
-POST   /api/posts/:id/pin          - 置顶帖子
-POST   /api/posts/:id/lock         - 锁定帖子
+POST   /api/questions              - 发布问题
+GET    /api/questions              - 获取问题列表（分页）
+GET    /api/questions/:id          - 获取问题详情
+PUT    /api/questions/:id          - 编辑问题
+DELETE /api/questions/:id          - 删除问题
+GET    /api/questions/search       - 搜索问题
 ```
 
-### 评论管理
+### 回答管理
 ```
-POST   /api/comments               - 发表评论
-GET    /api/comments/:id           - 获取评论
-GET    /api/comments/post/:postId  - 获取帖子评论
-GET    /api/comments/user/:userId  - 获取用户评论
-PUT    /api/comments/:id           - 编辑评论
-DELETE /api/comments/:id           - 删除评论
-```
-
-### 文件资源
-```
-POST   /api/resources/upload       - 上传文件
-GET    /api/resources/:id          - 获取文件信息
-GET    /api/resources/post/:postId - 获取帖子附件
-GET    /api/resources/download/:id - 下载文件
-DELETE /api/resources/:id          - 删除文件
+POST   /api/questions/:id/answers  - 发表回答
+GET    /api/questions/:id/answers  - 获取问题回答
+PUT    /api/answers/:id            - 编辑回答
+DELETE /api/answers/:id            - 删除回答
 ```
 
 ### 用户管理
 ```
 GET    /api/users/:id              - 获取用户信息
-GET    /api/users/profile/:username - 通过用户名获取用户
 PUT    /api/users/:id              - 更新用户信息
 DELETE /api/users/:id              - 删除用户
+```
+
+### 管理员
+```
+GET    /api/admin/users            - 获取用户列表
+PUT    /api/admin/users/:id/ban    - 封禁用户
+GET    /api/admin/questions        - 获取问题列表
+DELETE /api/admin/questions/:id    - 删除问题
 ```
 
 ## 🗂️ 项目结构
 
 ```
 CampusForum/
-├── src/
-│   ├── main/
-│   │   ├── java/com/campusforum/
-│   │   │   ├── CampusForumApplication.java       # 启动类
-│   │   │   ├── config/                           # 配置类
-│   │   │   │   ├── SecurityConfig.java           # Spring Security
-│   │   │   │   ├── WebConfig.java                # Web配置
-│   │   │   │   └── FileUploadConfig.java         # 文件上传配置
-│   │   │   ├── controller/                       # 控制层
-│   │   │   │   ├── AuthController.java           # 认证
-│   │   │   │   ├── PostController.java           # 帖子
-│   │   │   │   ├── CommentController.java        # 评论
-│   │   │   │   ├── ResourceController.java       # 文件资源
-│   │   │   │   └── UserController.java           # 用户
-│   │   │   ├── service/                          # 业务逻辑层
-│   │   │   │   ├── UserService.java
-│   │   │   │   ├── PostService.java
-│   │   │   │   ├── CommentService.java
-│   │   │   │   ├── ResourceService.java
-│   │   │   │   └── impl/                         # 实现类
-│   │   │   ├── repository/                       # 数据访问层
-│   │   │   │   ├── UserRepository.java
-│   │   │   │   ├── PostRepository.java
-│   │   │   │   ├── CommentRepository.java
-│   │   │   │   └── ResourceRepository.java
-│   │   │   ├── entity/                           # 实体类
-│   │   │   │   ├── User.java
-│   │   │   │   ├── Post.java
-│   │   │   │   ├── Comment.java
-│   │   │   │   └── Resource.java
-│   │   │   ├── dto/                              # 数据传输对象
-│   │   │   │   ├── ApiResponse.java
-│   │   │   │   ├── UserDTO.java
-│   │   │   │   ├── PostDTO.java
-│   │   │   │   ├── CommentDTO.java
-│   │   │   │   └── ResourceDTO.java
-│   │   │   └── util/                             # 工具类
-│   │   └── resources/
-│   │       ├── application.yml                   # 应用配置
-│   │       ├── application-dev.yml               # 开发环境配置
-│   │       ├── application-docker.yml            # Docker环境配置
-│   │       ├── db/
-│   │       │   └── init.sql                      # 数据库初始化脚本
-│   │       ├── templates/                        # Thymeleaf模板
-│   │       │   ├── index.html                    # 首页
-│   │       │   ├── register.html                 # 注册页
-│   │       │   ├── login.html                    # 登录页
-│   │       │   ├── post-list.html                # 帖子列表
-│   │       │   ├── post-detail.html              # 帖子详情
-│   │       │   ├── post-edit.html                # 发布帖子
-│   │       │   ├── user-profile.html             # 用户资料
-│   │       │   └── layout.html                   # 页面布局
-│   │       └── static/                           # 静态资源
-│   │           ├── css/
-│   │           │   └── style.css                 # 样式表
-│   │           └── js/
-│   │               ├── api.js                    # API函数库
-│   │               ├── utils.js                  # 工具函数库
-│   │               └── main.js                   # 主要逻辑
-│   └── test/                                     # 测试
-├── pom.xml                                        # Maven配置
-├── Dockerfile                                     # Docker镜像配置
-├── docker-compose.yml                             # Docker Compose配置
-├── start.sh                                       # Linux/Mac启动脚本
-├── start.bat                                      # Windows启动脚本
-├── Makefile                                       # Make快速命令
-├── .dockerignore                                  # Docker忽略文件
-├── .gitignore                                     # Git忽略文件
-├── .env.example                                   # 环境变量示例
-├── README.md                                      # 项目说明文档
-└── LICENSE                                        # 许可证
+├── backend/                          # Node.js后端
+│   ├── src/
+│   │   ├── app.js                    # 应用入口
+│   │   ├── config/
+│   │   │   └── db.js                 # 数据库配置
+│   │   ├── controllers/              # 控制器
+│   │   │   ├── authController.js
+│   │   │   ├── questionController.js
+│   │   │   ├── answerController.js
+│   │   │   ├── userController.js
+│   │   │   └── adminController.js
+│   │   ├── middleware/               # 中间件
+│   │   │   ├── auth.js
+│   │   │   └── roles.js
+│   │   ├── models/                   # 数据模型
+│   │   │   ├── User.js
+│   │   │   ├── Question.js
+│   │   │   ├── Answer.js
+│   │   │   └── Comment.js
+│   │   └── routes/                   # 路由
+│   │       ├── auth.js
+│   │       ├── questions.js
+│   │       ├── answers.js
+│   │       ├── users.js
+│   │       └── admin.js
+│   ├── package.json
+│   └── Dockerfile
+├── frontend/                         # React前端
+│   ├── src/
+│   │   ├── App.js                    # 根组件
+│   │   ├── index.js                  # 入口
+│   │   ├── api/                      # API请求
+│   │   ├── components/               # 公共组件
+│   │   ├── pages/                    # 页面组件
+│   │   └── store/                    # Redux状态
+│   ├── public/
+│   ├── package.json
+│   ├── Dockerfile
+│   └── nginx.conf
+├── docker-compose.yml                # Docker Compose配置
+├── start.sh                          # Linux/Mac启动脚本
+├── start.bat                         # Windows启动脚本
+├── Makefile                          # Make快速命令
+├── .dockerignore                     # Docker忽略文件
+├── .gitignore                        # Git忽略文件
+├── .env.example                      # 环境变量示例
+└── README.md                         # 项目说明文档
 ```
 
 ## 🛠️ 常用命令
 
-### Maven命令
+### npm命令
 ```bash
-# 清理并安装依赖
-mvn clean install
+# 安装依赖（前后端）
+make install
 
-# 编译项目
-mvn compile
+# 运行前端测试
+make test
 
-# 打包项目
-mvn package -DskipTests
+# 编译前端
+make build
 
-# 运行测试
-mvn test
-
-# 运行应用
-mvn spring-boot:run
+# 本地运行
+make run
 ```
 
 ### Docker命令
@@ -283,16 +245,13 @@ docker-compose up -d
 docker-compose down
 
 # 查看日志（实时）
-docker-compose logs -f app
+docker-compose logs -f backend
 
 # 查看运行中的容器
 docker-compose ps
 
 # 重启容器
 docker-compose restart
-
-# 进入数据库容器
-docker-compose exec db mysql -u root -proot campus_forum
 
 # 查看容器资源使用
 docker stats
@@ -306,7 +265,7 @@ make help
 # 安装依赖
 make install
 
-# 编译项目
+# 编译前端
 make build
 
 # 启动Docker（推荐）
@@ -317,81 +276,50 @@ make docker-down
 
 # 查看日志
 make docker-logs
-
-# 一键启动（完整流程）
-make start
-
-# 重启
-make restart
-
-# 清理所有资源
-make docker-clean
 ```
 
 ## 🔧 配置说明
 
-### 文件大小限制
-默认20MB（`application.yml`中配置）：
-```yaml
-spring:
-  servlet:
-    multipart:
-      max-file-size: 20MB
-      max-request-size: 20MB
+### 环境变量
+主要环境变量（`.env`）：
+```env
+# MongoDB配置
+MONGODB_URI=mongodb://mongodb:27017/anon-qa
+
+# JWT配置
+JWT_SECRET=change_this_secret_in_production
+JWT_EXPIRES_IN=7d
+
+# 后端配置
+PORT=5000
+NODE_ENV=production
 ```
-
-### 数据库字符集
-已配置为`utf8mb4_unicode_ci`，完全支持中文和表情符号。
-
-### 上传文件存储路径
-- **Docker环境**: `/var/lib/campusforum/uploads`
-- **本地开发**: `./uploads`
 
 ### 日志配置
-日志级别可在`application.yml`中调整：
-```yaml
-logging:
-  level:
-    root: INFO
-    com.campusforum: DEBUG
-```
+后端日志通过 `morgan` 中间件输出，可在 `backend/src/app.js` 中调整日志级别。
 
 ## 🔐 安全说明
 
 1. **密码加密** - 使用BCrypt算法加密存储
-2. **SQL注入防护** - 使用JPA自动参数化查询
-3. **XSS防护** - 前端HTML转义，后端输出编码
-4. **CSRF保护** - Spring Security CSRF令牌保护
-5. **上传文件安全**:
-   - 文件大小限制（20MB）
-   - 生成随机文件名存储
-   - 禁止执行上传的脚本文件
+2. **JWT认证** - 使用JSON Web Token进行身份验证
+3. **请求限流** - 全局限流200次/15分钟，认证接口限流20次/15分钟
+4. **输入验证** - 使用express-validator进行参数校验
 
-## 🐛 故障排排除
+## 🐛 故障排除
 
 ### Docker启动后无法访问
 1. 检查容器是否运行：`docker-compose ps`
-2. 查看日志：`docker-compose logs app`
-3. 检查防火墙是否阻止8080端口
-4. 确保没有其他应用占用8080端口
+2. 查看日志：`docker-compose logs backend`
+3. 检查防火墙是否阻止80或5000端口
+4. 确保没有其他应用占用端口
 
 ### 数据库连接失败
-1. 检查MySQL容器状态：`docker-compose logs db`
+1. 检查MongoDB容器状态：`docker-compose logs mongodb`
 2. 等待数据库完全初始化（约10-15秒）
-3. 验证数据库连接：`docker-compose exec db mysql -u root -proot -e "SHOW DATABASES;"`
-
-### 中文显示乱码
-1. 确保数据库字符集为`utf8mb4`
-2. 检查`application.yml`中的字符编码配置
-3. 浏览器设置正确的字符集（一般自动检测）
-
-### 文件上传失败
-1. 检查文件大小是否超过20MB
-2. 确保上传目录有写入权限
-3. 检查磁盘空间是否充足
+3. 验证连接：`docker-compose exec mongodb mongosh --eval "db.adminCommand('ping')"`
 
 ### 应用启动缓慢
-1. Docker首次启动需要初始化数据库，耐心等待
+1. Docker首次启动需要拉取镜像并初始化，耐心等待
 2. 如使用虚拟化环境，确保分配足够的CPU和内存
 3. 检查网络连接（某些依赖需要从网络下载）
 
@@ -400,42 +328,32 @@ logging:
 ### 注册新用户
 1. 点击"注册"链接
 2. 填写用户名、邮箱、密码
-3. 设置真实姓名（可选）
-4. 点击"注册"按钮
+3. 点击"注册"按钮
 
-### 发布帖子
+### 发布问题
 1. 登录账户
-2. 点击"发布新帖"按钮
-3. 选择分类（讨论/求助/分享/新闻）
-4. 填写标题和内容
-5. 可选：上传多个附件（每个不超过20MB）
-6. 点击"发布"
+2. 点击"提问"按钮
+3. 填写问题标题和内容
+4. 点击"发布"
 
-### 评论和回复
-1. 在帖子详情页面
-2. 在评论框输入内容
-3. 点击"发表评论"
-4. 可以回复其他评论
-
-### 下载文件
-1. 在帖子详情页面找到附件区
-2. 点击"下载"按钮
-3. 文件保存到本地下载文件夹
+### 回答问题
+1. 浏览或搜索问题
+2. 点击问题进入详情页
+3. 在回答框输入内容
+4. 点击"提交回答"
 
 ## 🤝 贡献指南
 
 欢迎提交Issue和Pull Request改进项目！
 
 ### 代码风格
-- Java代码遵循Google Java Style Guide
-- 使用4个空格缩进
+- JavaScript代码遵循ESLint规范
+- 使用2个空格缩进
 - 变量名使用驼峰命名法
-- 方法名以动词开头
 
 ### 测试要求
 - 新功能需附带单元测试
-- 边界条件需测试
-- 运行所有测试：`mvn test`
+- 运行所有测试：`make test`
 
 ## 📝 许可证
 
@@ -445,14 +363,15 @@ logging:
 
 如有问题或建议，请：
 1. 提交Issue
-2. 发送邮件至 admin@campusforum.com
-3. 查阅项目Wiki文档
+2. 查阅项目Wiki文档
 
 ## 🎓 学习资源
 
-- [Spring Boot官方文档](https://docs.spring.io/spring-boot/docs/current/reference/html/)
-- [Spring Data JPA文档](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/)
-- [Bootstrap官方文档](https://getbootstrap.com/docs/)
+- [Node.js官方文档](https://nodejs.org/docs/)
+- [Express官方文档](https://expressjs.com/)
+- [React官方文档](https://react.dev/)
+- [MongoDB官方文档](https://www.mongodb.com/docs/)
+- [Ant Design官方文档](https://ant.design/docs/react/introduce)
 - [Docker官方文档](https://docs.docker.com/)
 
 ## 🏆 致谢
@@ -461,6 +380,6 @@ logging:
 
 ---
 
-**最后更新**: 2026年3月8日  
+**最后更新**: 2026年3月19日  
 **版本**: 1.0.0  
 **维护者**: Campus Forum Team
