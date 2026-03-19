@@ -76,26 +76,15 @@ const getAnswers = async (req, res) => {
     const viewerId = req.user?._id?.toString();
     let favoriteSet = new Set();
 
-    if (viewerId) {
-      const favorites = req.user?.favorites;
-      if (favorites?.length) {
-        favoriteSet = new Set(favorites.map((fid) => fid.toString()));
-      } else {
-        // optionalAuth may supply a lean user object without favorites; fetch as a fallback once per request
-        const user = await User.findById(viewerId).select('favorites');
-        if (user?.favorites?.length) {
-          favoriteSet = new Set(user.favorites.map((fid) => fid.toString()));
-        }
-      }
+    if (viewerId && req.user?.favorites?.length) {
+      favoriteSet = new Set(req.user.favorites.map((fid) => fid.toString()));
     }
 
     const shaped = answers.map((a) => {
-      const likedByMe = viewerId
-        ? (a.likedBy || []).some((uid) => uid.toString() === viewerId)
-        : false;
-      const dislikedByMe = viewerId
-        ? (a.dislikedBy || []).some((uid) => uid.toString() === viewerId)
-        : false;
+      const likedSet = new Set((a.likedBy || []).map((uid) => uid.toString()));
+      const dislikedSet = new Set((a.dislikedBy || []).map((uid) => uid.toString()));
+      const likedByMe = viewerId ? likedSet.has(viewerId) : false;
+      const dislikedByMe = viewerId ? dislikedSet.has(viewerId) : false;
       const favoritedByMe = viewerId ? favoriteSet.has(a._id.toString()) : false;
 
       return {
