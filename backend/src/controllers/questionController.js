@@ -84,7 +84,8 @@ const getQuestion = async (req, res) => {
       return res.status(400).json({ message: 'Invalid question ID' });
     }
 
-    const shouldCountView = !['false', '0'].includes((req.query.countView || '').toString());
+    const countViewFlag = (req.query.countView || '').toString();
+    const shouldCountView = countViewFlag !== 'false' && countViewFlag !== '0';
 
     const question = await Question.findById(id).populate('createdBy', 'username');
 

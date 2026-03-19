@@ -81,7 +81,7 @@ const getAnswers = async (req, res) => {
       if (favorites?.length) {
         favoriteSet = new Set(favorites.map((fid) => fid.toString()));
       } else {
-        // optionalAuth may supply a lean user object without favorites; fetch as a fallback
+        // optionalAuth may supply a lean user object without favorites; fetch as a fallback once per request
         const user = await User.findById(viewerId).select('favorites');
         if (user?.favorites?.length) {
           favoriteSet = new Set(user.favorites.map((fid) => fid.toString()));

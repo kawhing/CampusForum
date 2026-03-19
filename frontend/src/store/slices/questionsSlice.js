@@ -19,8 +19,8 @@ export const fetchQuestion = createAsyncThunk(
   'questions/fetchQuestion',
   async (payload, { rejectWithValue }) => {
     try {
-      const { id, countView } =
-        typeof payload === 'string' ? { id: payload, countView: true } : payload || {};
+      const { id, countView = true } =
+        typeof payload === 'string' ? { id: payload } : payload || {};
       if (!id) {
         return rejectWithValue('问题ID无效');
       }

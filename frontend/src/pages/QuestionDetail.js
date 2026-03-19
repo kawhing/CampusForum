@@ -54,6 +54,7 @@ import {
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
+const MAX_VIEWED_QUESTIONS = 100;
 
 const ANSWER_SORT_OPTIONS = [
   { value: 'time', label: '最新' },
@@ -440,7 +441,7 @@ export default function QuestionDetail() {
     const hasViewed = viewed.includes(id);
 
     if (!hasViewed) {
-      const nextViewed = [...viewed, id].slice(-100);
+      const nextViewed = [...viewed, id].slice(-MAX_VIEWED_QUESTIONS);
       localStorage.setItem(viewedKey, JSON.stringify(nextViewed));
     }
 
