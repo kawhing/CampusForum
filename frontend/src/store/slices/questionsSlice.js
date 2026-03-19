@@ -20,7 +20,7 @@ export const fetchQuestion = createAsyncThunk(
   async (payload, { rejectWithValue }) => {
     try {
       const { id, countView } =
-        typeof payload === 'string' ? { id: payload } : payload || {};
+        typeof payload === 'string' ? { id: payload, countView: true } : payload || {};
       const params = countView === false ? { countView: 'false' } : undefined;
       const response = await getQuestionApi(id, params);
       return response.data;

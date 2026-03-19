@@ -103,7 +103,6 @@ const getQuestion = async (req, res) => {
         }
         question.viewCount += 1;
         await question.save();
-        await question.populate('createdBy', 'username');
       }
     }
 

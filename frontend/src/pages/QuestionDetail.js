@@ -431,7 +431,12 @@ export default function QuestionDetail() {
 
   useEffect(() => {
     const viewedKey = 'viewed_questions';
-    const viewed = JSON.parse(localStorage.getItem(viewedKey) || '[]');
+    let viewed = [];
+    try {
+      viewed = JSON.parse(localStorage.getItem(viewedKey) || '[]');
+    } catch (e) {
+      viewed = [];
+    }
     const hasViewed = viewed.includes(id);
 
     if (!hasViewed) {

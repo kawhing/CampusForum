@@ -84,10 +84,10 @@ const getAnswers = async (req, res) => {
     }
 
     const shaped = answers.map((a) => {
-      const likedByMe = viewerId ? a.likedBy.some((uid) => uid.toString() === viewerId) : false;
-      const dislikedByMe = viewerId
-        ? a.dislikedBy.some((uid) => uid.toString() === viewerId)
-        : false;
+      const likedSet = new Set((a.likedBy || []).map((uid) => uid.toString()));
+      const dislikedSet = new Set((a.dislikedBy || []).map((uid) => uid.toString()));
+      const likedByMe = viewerId ? likedSet.has(viewerId) : false;
+      const dislikedByMe = viewerId ? dislikedSet.has(viewerId) : false;
       const favoritedByMe = viewerId ? favoriteSet.has(a._id.toString()) : false;
 
       return {
