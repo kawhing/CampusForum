@@ -3,9 +3,8 @@ package com.campusforum.controller;
 import com.campusforum.dto.ApiResponse;
 import com.campusforum.dto.ResourceDTO;
 import com.campusforum.entity.Resource;
-import com.campusforum.entity.User;
 import com.campusforum.service.ResourceService;
-import com.campusforum.service.UserService;
+import com.campusforum.util.DtoMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
@@ -14,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -27,7 +25,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ResourceController {
     private final ResourceService resourceService;
-    private final UserService userService;
+    private final DtoMapper dtoMapper;
 
     @PostMapping("/upload")
     public ApiResponse<?> uploadFile(
@@ -45,7 +43,7 @@ public class ResourceController {
 
         try {
             Resource resource = resourceService.uploadFile(postId, userId, file);
-            return ApiResponse.success("上传成功", convertToDTO(resource));
+            return ApiResponse.success("上传成功", dtoMapper.toResourceDTO(resource));
         } catch (IOException e) {
             return ApiResponse.error("上传失败：" + e.getMessage());
         }
@@ -55,7 +53,7 @@ public class ResourceController {
     public ApiResponse<?> getResource(@PathVariable Long id) {
         Optional<Resource> resource = resourceService.getResourceById(id);
         if (resource.isPresent()) {
-            return ApiResponse.success(convertToDTO(resource.get()));
+            return ApiResponse.success(dtoMapper.toResourceDTO(resource.get()));
         }
         return ApiResponse.notFound();
     }
@@ -67,13 +65,13 @@ public class ResourceController {
             @RequestParam(defaultValue = "10") int size) {
 
         Page<Resource> resources = resourceService.getResourcesByPostId(postId, page, size);
-        return ApiResponse.success(resources.map(this::convertToDTO));
+        return ApiResponse.success(resources.map(dtoMapper::toResourceDTO));
     }
 
     @GetMapping("/post-list/{postId}")
     public ApiResponse<?> getResourcesByPostList(@PathVariable Long postId) {
         List<Resource> resources = resourceService.getResourcesByPostIdList(postId);
-        return ApiResponse.success(resources.stream().map(this::convertToDTO).collect(Collectors.toList()));
+        return ApiResponse.success(resources.stream().map(dtoMapper::toResourceDTO).collect(Collectors.toList()));
     }
 
     @GetMapping("/user/{userId}")
@@ -83,7 +81,7 @@ public class ResourceController {
             @RequestParam(defaultValue = "10") int size) {
 
         Page<Resource> resources = resourceService.getResourcesByUserId(userId, page, size);
-        return ApiResponse.success(resources.map(this::convertToDTO));
+        return ApiResponse.success(resources.map(dtoMapper::toResourceDTO));
     }
 
     @DeleteMapping("/{id}")
@@ -109,22 +107,5 @@ public class ResourceController {
             }
         }
         return ResponseEntity.notFound().build();
-    }
-
-    private ResourceDTO convertToDTO(Resource resource) {
-        Optional<User> user = userService.getUserById(resource.getUserId());
-        return ResourceDTO.builder()
-                .id(resource.getId())
-                .postId(resource.getPostId())
-                .userId(resource.getUserId())
-                .username(user.map(User::getUsername).orElse("未知用户"))
-                .fileName(resource.getFileName())
-                .storedFileName(resource.getStoredFileName())
-                .fileSize(resource.getFileSize())
-                .fileType(resource.getFileType())
-                .downloadCount(resource.getDownloadCount())
-                .createdAt(resource.getCreatedAt())
-                .updatedAt(resource.getUpdatedAt())
-                .build();
     }
 }

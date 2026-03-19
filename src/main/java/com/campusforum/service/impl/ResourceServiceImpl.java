@@ -106,12 +106,10 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     public void incrementDownloadCount(Long resourceId) {
-        Optional<Resource> resource = resourceRepository.findById(resourceId);
-        if (resource.isPresent()) {
-            Resource r = resource.get();
+        resourceRepository.findById(resourceId).ifPresent(r -> {
             r.setDownloadCount(r.getDownloadCount() + 1);
             resourceRepository.save(r);
-        }
+        });
     }
 
     @Override

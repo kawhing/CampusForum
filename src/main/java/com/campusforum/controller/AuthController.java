@@ -4,6 +4,7 @@ import com.campusforum.dto.ApiResponse;
 import com.campusforum.dto.UserDTO;
 import com.campusforum.entity.User;
 import com.campusforum.service.UserService;
+import com.campusforum.util.DtoMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +17,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AuthController {
     private final UserService userService;
+    private final DtoMapper dtoMapper;
 
     @PostMapping("/register")
     public ApiResponse<?> register(
@@ -34,7 +36,7 @@ public class AuthController {
 
         try {
             User user = userService.register(username, email, password, realname);
-            UserDTO userDTO = convertToDTO(user);
+            UserDTO userDTO = dtoMapper.toUserDTO(user);
             return ApiResponse.success("注册成功", userDTO);
         } catch (Exception e) {
             return ApiResponse.error("注册失败：" + e.getMessage());
@@ -49,7 +51,7 @@ public class AuthController {
         Optional<User> user = userService.login(username, password);
         if (user.isPresent()) {
             Map<String, Object> data = new HashMap<>();
-            data.put("user", convertToDTO(user.get()));
+            data.put("user", dtoMapper.toUserDTO(user.get()));
             data.put("token", "Bearer_" + user.get().getId() + "_" + System.currentTimeMillis());
             return ApiResponse.success("登录成功", data);
         } else {
@@ -76,20 +78,5 @@ public class AuthController {
         return ApiResponse.success(new HashMap<String, Object>() {{
             put("exists", exists);
         }});
-    }
-
-    private UserDTO convertToDTO(User user) {
-        return UserDTO.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .realname(user.getRealname())
-                .avatar(user.getAvatar())
-                .bio(user.getBio())
-                .role(user.getRole())
-                .isActive(user.getIsActive())
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
-                .build();
     }
 }
