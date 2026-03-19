@@ -1,10 +1,10 @@
 @echo off
-REM 校园论坛 Docker启动脚本（Windows版）
+REM 匿名问答平台 Docker启动脚本（Windows版）
 
 setlocal enabledelayedexpansion
 
 echo ========================================
-echo   校园论坛 - Campus Forum
+echo   匿名问答平台 - Anonymous Q^&A
 echo   Docker 一键启动脚本 (Windows)
 echo ========================================
 echo.
@@ -23,6 +23,14 @@ if errorlevel 1 (
     echo 错误：docker-compose 未安装。
     pause
     exit /b 1
+)
+
+REM 创建.env文件（如果不存在）
+if not exist .env (
+    echo 未找到 .env 文件，从 .env.example 复制...
+    copy .env.example .env
+    echo 请编辑 .env 文件修改 JWT_SECRET 等敏感配置后重新运行。
+    pause
 )
 
 echo 正在构建应用镜像...
@@ -47,15 +55,14 @@ echo ========================================
 echo 容器启动成功！
 echo ========================================
 echo.
-echo 应用接下来的步骤：
-echo 1. 等待数据库初始化完成（约10-15秒）
-echo 2. 访问应用：http://localhost:8080
-echo 3. 默认用户：admin / admin123
+echo 访问地址：
+echo   前端应用：http://localhost
+echo   后端API：http://localhost:5000/api
 echo.
 echo 有用的命令：
-echo - 查看日志：docker-compose logs -f app
-echo - 停止应用：docker-compose down
-echo - 重启应用：docker-compose restart
+echo   查看日志：docker-compose logs -f
+echo   停止应用：docker-compose down
+echo   重启应用：docker-compose restart
 echo.
 echo ========================================
 echo.

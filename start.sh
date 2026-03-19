@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 校园论坛 Docker启动脚本
+# 匿名问答平台 Docker启动脚本
 
 set -e
 
@@ -11,7 +11,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}  校园论坛 - Campus Forum${NC}"
+echo -e "${GREEN}  匿名问答平台 - Anonymous Q&A${NC}"
 echo -e "${GREEN}  Docker 一键启动脚本${NC}"
 echo -e "${GREEN}========================================${NC}"
 
@@ -27,6 +27,13 @@ if ! command -v docker-compose &> /dev/null; then
     exit 1
 fi
 
+# 创建.env文件（如果不存在）
+if [ ! -f .env ]; then
+    echo -e "${YELLOW}未找到 .env 文件，从 .env.example 复制...${NC}"
+    cp .env.example .env
+    echo -e "${YELLOW}请编辑 .env 文件修改 JWT_SECRET 等敏感配置后重新运行。${NC}"
+fi
+
 echo -e "${YELLOW}正在构建应用镜像...${NC}"
 docker-compose build --no-cache
 
@@ -35,15 +42,14 @@ docker-compose up -d
 
 echo -e "${GREEN}容器启动成功！${NC}"
 echo ""
-echo -e "${GREEN}应用接下来的步骤：${NC}"
-echo "1. 等待数据库初始化完成（约10-15秒）"
-echo "2. 访问应用：${YELLOW}http://localhost:8080${NC}"
-echo "3. 默认用户：admin / admin123"
+echo -e "${GREEN}访问地址：${NC}"
+echo "  前端应用：${YELLOW}http://localhost${NC}"
+echo "  后端API：${YELLOW}http://localhost:5000/api${NC}"
 echo ""
 echo -e "${GREEN}有用的命令：${NC}"
-echo "- 查看日志：${YELLOW}docker-compose logs -f app${NC}"
-echo "- 停止应用：${YELLOW}docker-compose down${NC}"
-echo "- 重启应用：${YELLOW}docker-compose restart${NC}"
-echo "- 进入数据库：${YELLOW}docker-compose exec db mysql -u root -proot campus_forum${NC}"
+echo "  查看日志：${YELLOW}docker-compose logs -f${NC}"
+echo "  停止应用：${YELLOW}docker-compose down${NC}"
+echo "  重启应用：${YELLOW}docker-compose restart${NC}"
 echo ""
 echo -e "${GREEN}========================================${NC}"
+
