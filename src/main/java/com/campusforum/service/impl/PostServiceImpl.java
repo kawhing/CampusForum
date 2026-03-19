@@ -86,41 +86,33 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public void incrementViewCount(Long postId) {
-        Optional<Post> post = postRepository.findById(postId);
-        if (post.isPresent()) {
-            Post p = post.get();
+        postRepository.findById(postId).ifPresent(p -> {
             p.setViewCount(p.getViewCount() + 1);
             postRepository.save(p);
-        }
+        });
     }
 
     @Override
     public void updateReplyCount(Long postId) {
-        Optional<Post> post = postRepository.findById(postId);
-        if (post.isPresent()) {
-            Post p = post.get();
+        postRepository.findById(postId).ifPresent(p -> {
             p.setReplyCount(p.getReplyCount() + 1);
             postRepository.save(p);
-        }
+        });
     }
 
     @Override
     public void pinPost(Long postId, boolean pin) {
-        Optional<Post> post = postRepository.findById(postId);
-        if (post.isPresent()) {
-            Post p = post.get();
+        postRepository.findById(postId).ifPresent(p -> {
             p.setIsPinned(pin);
             postRepository.save(p);
-        }
+        });
     }
 
     @Override
     public void lockPost(Long postId, boolean lock) {
-        Optional<Post> post = postRepository.findById(postId);
-        if (post.isPresent()) {
-            Post p = post.get();
+        postRepository.findById(postId).ifPresent(p -> {
             p.setIsLocked(lock);
             postRepository.save(p);
-        }
+        });
     }
 }

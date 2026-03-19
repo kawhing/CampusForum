@@ -1,0 +1,91 @@
+import axios from 'axios';
+import store from '../store';
+import { logout } from '../store/slices/authSlice';
+
+const api = axios.create({
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  timeout: 10000,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      store.dispatch(logout());
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Auth
+export const register = (data) => api.post('/auth/register', data);
+export const login = (data) => api.post('/auth/login', data);
+export const logoutApi = () => api.post('/auth/logout');
+export const getMe = () => api.get('/auth/me');
+
+// Questions
+export const getQuestions = (params) => api.get('/questions', { params });
+export const getQuestion = (id) => api.get(`/questions/${id}`);
+export const createQuestion = (data) => api.post('/questions', data);
+export const updateQuestion = (id, data) => api.put(`/questions/${id}`, data);
+export const deleteQuestion = (id) => api.delete(`/questions/${id}`);
+export const getCategories = () => api.get('/questions/categories');
+
+// Answers
+export const getAnswers = (questionId, params) =>
+  api.get(`/questions/${questionId}/answers`, { params });
+export const createAnswer = (questionId, data) =>
+  api.post(`/questions/${questionId}/answers`, data);
+export const updateAnswer = (id, data) => api.put(`/answers/${id}`, data);
+export const deleteAnswer = (id) => api.delete(`/answers/${id}`);
+export const likeAnswer = (id) => api.post(`/answers/${id}/like`);
+export const dislikeAnswer = (id) => api.post(`/answers/${id}/dislike`);
+export const favoriteAnswer = (id) => api.post(`/answers/${id}/favorite`);
+export const getComments = (answerId) => api.get(`/answers/${answerId}/comments`);
+export const createComment = (answerId, data) =>
+  api.post(`/answers/${answerId}/comments`, data);
+export const deleteComment = (id) => api.delete(`/comments/${id}`);
+
+// Users
+export const getProfile = () => api.get('/users/profile');
+export const getMyQuestions = (params) => api.get('/users/questions', { params });
+export const getMyAnswers = (params) => api.get('/users/answers', { params });
+export const getMyFavorites = () => api.get('/users/favorites');
+export const getNotifications = () => api.get('/users/notifications');
+export const markNotificationRead = (id) => api.put(`/users/notifications/${id}/read`);
+export const createAppeal = (data) => api.post('/users/appeals', data);
+export const getMyAppeals = () => api.get('/users/appeals');
+
+// Admin
+export const archiveQuestion = (id, data) =>
+  api.post(`/admin/questions/${id}/archive`, data);
+export const unarchiveQuestion = (id, data) =>
+  api.post(`/admin/questions/${id}/unarchive`, data);
+export const adminDeleteQuestion = (id, data) =>
+  api.delete(`/admin/questions/${id}`, { data });
+export const adminDeleteAnswer = (id, data) =>
+  api.delete(`/admin/answers/${id}`, { data });
+export const pinAnswer = (id, data) => api.post(`/admin/answers/${id}/pin`, data);
+export const banUser = (id, data) => api.post(`/admin/users/${id}/ban`, data);
+export const unbanUser = (id, data) => api.post(`/admin/users/${id}/unban`, data);
+export const changeCategory = (id, data) =>
+  api.put(`/admin/questions/${id}/category`, data);
+export const getOperationLogs = (params) => api.get('/admin/logs', { params });
+export const getAppeals = () => api.get('/admin/appeals');
+export const resolveAppeal = (id, data) => api.put(`/admin/appeals/${id}`, data);
+export const getAdminStats = () => api.get('/admin/stats');
+
+export default api;

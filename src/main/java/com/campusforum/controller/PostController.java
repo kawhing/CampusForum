@@ -3,22 +3,20 @@ package com.campusforum.controller;
 import com.campusforum.dto.ApiResponse;
 import com.campusforum.dto.PostDTO;
 import com.campusforum.entity.Post;
-import com.campusforum.entity.User;
 import com.campusforum.service.PostService;
-import com.campusforum.service.UserService;
+import com.campusforum.util.DtoMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
-    private final UserService userService;
+    private final DtoMapper dtoMapper;
 
     @PostMapping
     public ApiResponse<?> createPost(
@@ -32,7 +30,7 @@ public class PostController {
         }
 
         Post post = postService.createPost(userId, title, content, category);
-        return ApiResponse.success("发布成功", convertToDTO(post));
+        return ApiResponse.success("发布成功", dtoMapper.toPostDTO(post));
     }
 
     @GetMapping("/{id}")
@@ -40,7 +38,7 @@ public class PostController {
         Optional<Post> post = postService.getPostById(id);
         if (post.isPresent()) {
             postService.incrementViewCount(id);
-            return ApiResponse.success(convertToDTO(post.get()));
+            return ApiResponse.success(dtoMapper.toPostDTO(post.get()));
         }
         return ApiResponse.notFound();
     }
@@ -51,7 +49,7 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size) {
 
         Page<Post> posts = postService.getAllPosts(page, size);
-        return ApiResponse.success(posts.map(this::convertToDTO));
+        return ApiResponse.success(posts.map(dtoMapper::toPostDTO));
     }
 
     @GetMapping("/category/{category}")
@@ -61,7 +59,7 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size) {
 
         Page<Post> posts = postService.getPostsByCategory(category, page, size);
-        return ApiResponse.success(posts.map(this::convertToDTO));
+        return ApiResponse.success(posts.map(dtoMapper::toPostDTO));
     }
 
     @GetMapping("/user/{userId}")
@@ -71,7 +69,7 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size) {
 
         Page<Post> posts = postService.getPostsByUserId(userId, page, size);
-        return ApiResponse.success(posts.map(this::convertToDTO));
+        return ApiResponse.success(posts.map(dtoMapper::toPostDTO));
     }
 
     @GetMapping("/search")
@@ -81,7 +79,7 @@ public class PostController {
             @RequestParam(defaultValue = "10") int size) {
 
         Page<Post> posts = postService.searchPosts(keyword, page, size);
-        return ApiResponse.success(posts.map(this::convertToDTO));
+        return ApiResponse.success(posts.map(dtoMapper::toPostDTO));
     }
 
     @PutMapping("/{id}")
@@ -98,7 +96,7 @@ public class PostController {
 
         Post updated = postService.updatePost(id, post);
         if (updated != null) {
-            return ApiResponse.success("更新成功", convertToDTO(updated));
+            return ApiResponse.success("更新成功", dtoMapper.toPostDTO(updated));
         }
         return ApiResponse.notFound();
     }
@@ -119,24 +117,5 @@ public class PostController {
     public ApiResponse<?> lockPost(@PathVariable Long id, @RequestParam boolean lock) {
         postService.lockPost(id, lock);
         return ApiResponse.success(lock ? "锁定成功" : "解锁成功", null);
-    }
-
-    private PostDTO convertToDTO(Post post) {
-        Optional<User> user = userService.getUserById(post.getUserId());
-        return PostDTO.builder()
-                .id(post.getId())
-                .userId(post.getUserId())
-                .username(user.map(User::getUsername).orElse("未知用户"))
-                .avatar(user.map(User::getAvatar).orElse(null))
-                .title(post.getTitle())
-                .content(post.getContent())
-                .category(post.getCategory())
-                .viewCount(post.getViewCount())
-                .replyCount(post.getReplyCount())
-                .isPinned(post.getIsPinned())
-                .isLocked(post.getIsLocked())
-                .createdAt(post.getCreatedAt())
-                .updatedAt(post.getUpdatedAt())
-                .build();
     }
 }
