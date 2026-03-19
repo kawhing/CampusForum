@@ -118,7 +118,7 @@ const getQuestion = async (req, res) => {
       return res.status(404).json({ message: 'Question not found' });
     }
 
-    if (question.viewedBy?.length > VIEWED_BY_LIMIT) {
+    if (shouldCountView && question.viewedBy?.length > VIEWED_BY_LIMIT) {
       question.viewedBy = question.viewedBy.slice(-VIEWED_BY_LIMIT);
       await question.save();
     }
