@@ -4,11 +4,11 @@ const {
   likeAnswer, dislikeAnswer, createComment, getComments,
   deleteComment, toggleFavorite
 } = require('../controllers/answerController');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, optionalAuth } = require('../middleware/auth');
 
 // Router for /api/questions/:questionId/answers
 const questionAnswersRouter = express.Router({ mergeParams: true });
-questionAnswersRouter.get('/', getAnswers);
+questionAnswersRouter.get('/', optionalAuth, getAnswers);
 questionAnswersRouter.post('/', authenticate, createAnswer);
 
 // Router for /api/answers/:id and /api/comments/:id

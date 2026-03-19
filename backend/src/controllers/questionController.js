@@ -84,14 +84,27 @@ const getQuestion = async (req, res) => {
       return res.status(400).json({ message: 'Invalid question ID' });
     }
 
-    const question = await Question.findByIdAndUpdate(
-      id,
-      { $inc: { viewCount: 1 } },
-      { new: true }
-    ).populate('createdBy', 'username');
+    const shouldCountView = !['false', '0'].includes((req.query.countView || '').toString());
+
+    const question = await Question.findById(id).populate('createdBy', 'username');
 
     if (!question) {
       return res.status(404).json({ message: 'Question not found' });
+    }
+
+    if (shouldCountView) {
+      const viewerId = req.user?._id?.toString();
+      const alreadyViewed =
+        viewerId && question.viewedBy?.some((uid) => uid.toString() === viewerId);
+
+      if (!alreadyViewed) {
+        if (viewerId) {
+          question.viewedBy.push(req.user._id);
+        }
+        question.viewCount += 1;
+        await question.save();
+        await question.populate('createdBy', 'username');
+      }
     }
 
     return res.status(200).json({ question });

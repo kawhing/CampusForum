@@ -51,7 +51,7 @@ export const getMe = () => api.get('/auth/me');
 
 // Questions
 export const getQuestions = (params) => api.get('/questions', { params });
-export const getQuestion = (id) => api.get(`/questions/${id}`);
+export const getQuestion = (id, params) => api.get(`/questions/${id}`, { params });
 export const createQuestion = (data) => api.post('/questions', data);
 export const updateQuestion = (id, data) => api.put(`/questions/${id}`, data);
 export const deleteQuestion = (id) => api.delete(`/questions/${id}`);

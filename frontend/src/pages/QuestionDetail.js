@@ -430,7 +430,15 @@ export default function QuestionDetail() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchQuestion(id));
+    const viewedKey = 'viewed_questions';
+    const viewed = JSON.parse(localStorage.getItem(viewedKey) || '[]');
+    const hasViewed = viewed.includes(id);
+
+    if (!hasViewed) {
+      localStorage.setItem(viewedKey, JSON.stringify([...viewed, id]));
+    }
+
+    dispatch(fetchQuestion({ id, countView: !hasViewed }));
   }, [dispatch, id]);
 
   const loadAnswers = useCallback(() => {

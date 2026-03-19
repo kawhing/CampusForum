@@ -10,6 +10,7 @@ const QuestionSchema = new mongoose.Schema({
   isArchived: { type: Boolean, default: false },
   archiveReason: { type: String },
   viewCount: { type: Number, default: 0 },
+  viewedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   answerCount: { type: Number, default: 0 },
   isPinned: { type: Boolean, default: false }
 });

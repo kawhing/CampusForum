@@ -73,7 +73,36 @@ const getAnswers = async (req, res) => {
       .sort(sortOption)
       .populate('createdBy', 'username');
 
-    return res.status(200).json({ answers });
+    const viewerId = req.user?._id?.toString();
+    let favoriteSet = new Set();
+
+    if (viewerId) {
+      const user = await User.findById(viewerId).select('favorites');
+      if (user?.favorites?.length) {
+        favoriteSet = new Set(user.favorites.map((fid) => fid.toString()));
+      }
+    }
+
+    const shaped = answers.map((a) => {
+      const likedByMe = viewerId ? a.likedBy.some((uid) => uid.toString() === viewerId) : false;
+      const dislikedByMe = viewerId
+        ? a.dislikedBy.some((uid) => uid.toString() === viewerId)
+        : false;
+      const favoritedByMe = viewerId ? favoriteSet.has(a._id.toString()) : false;
+
+      return {
+        ...a.toObject(),
+        likeCount: a.likes,
+        dislikeCount: a.dislikes,
+        likedByMe,
+        dislikedByMe,
+        favoritedByMe,
+        authorName: a.createdBy?.username,
+        authorId: a.createdBy?._id
+      };
+    });
+
+    return res.status(200).json({ answers: shaped });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
