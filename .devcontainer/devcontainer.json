@@ -1,26 +1,26 @@
 {
   "name": "CampusForum Development Container",
-  "image": "mcr.microsoft.com/devcontainers/java:11",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:18",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
   "customizations": {
     "vscode": {
       "extensions": [
-        "vscjava.extension-pack-for-java",
-        "vscjava.vscode-maven",
-        "vscjava.vscode-spring-boot-dashboard",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "mongodb.mongodb-vscode",
         "eamodio.gitlens",
         "ms-vscode.makefile-tools",
         "humao.rest-client"
       ],
       "settings": {
-        "java.configuration.updateBuildConfiguration": "automatic",
-        "maven.executable.path": "/usr/local/sdkman/candidates/maven/current/bin/mvn"
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
       }
     }
   },
-  "forwardPorts": [8080, 3306],
-  "postCreateCommand": "mvn clean install -DskipTests",
-  "remoteUser": "vscode"
+  "forwardPorts": [3000, 5000, 27017],
+  "postCreateCommand": "cd backend && npm install && cd ../frontend && npm install",
+  "remoteUser": "node"
 }
