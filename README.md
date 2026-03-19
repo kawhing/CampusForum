@@ -46,6 +46,8 @@
    docker-compose --version
    ```
 
+> 📋 **完整部署指南（含分支说明）请查看 [DEPLOYMENT.md](DEPLOYMENT.md)**
+
 ## 🚀 快速启动
 
 ### 方式一：Docker一键启动（推荐，Windows/Mac/Linux）
