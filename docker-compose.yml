@@ -1,100 +1,74 @@
 version: '3.8'
 
 services:
-  # MySQL数据库服务
-  db:
-    image: mysql:8.0
-    container_name: campusforum-mysql
+  # MongoDB数据库服务
+  mongodb:
+    image: mongo:6.0
+    container_name: anon-qa-mongodb
     environment:
-      # MySQL root用户密码
-      MYSQL_ROOT_PASSWORD: root
-      # 创建的数据库名
-      MYSQL_DATABASE: campus_forum
-      # 默认用户
-      MYSQL_USER: campusforum
-      MYSQL_PASSWORD: campusforum123
-      # 字符集
-      MYSQL_INITDB_SKIP_TZINFO: 'yes'
+      MONGO_INITDB_DATABASE: anon-qa
     ports:
-      - "3306:3306"
+      - "27017:27017"
     volumes:
-      # 初始化脚本挂载
-      - ./src/main/resources/db/init.sql:/docker-entrypoint-initdb.d/init.sql
-      # 数据卷用于持久化数据
-      - mysql-data:/var/lib/mysql
+      - mongo-data:/data/db
     networks:
-      - campusforum-network
+      - anon-qa-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
-    command: 
-      --character-set-server=utf8mb4 
-      --collation-server=utf8mb4_unicode_ci
-      --default-authentication-plugin=mysql_native_password
 
-  # Spring Boot应用服务
-  app:
+  # Node.js后端服务
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: campusforum-app
+    container_name: anon-qa-backend
     ports:
-      - "8080:8080"
+      - "5000:5000"
     environment:
-      # Spring profiles
-      SPRING_PROFILES_ACTIVE: docker
-      # 数据库连接配置
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/campus_forum?useSSL=false&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
-      # JPA配置
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
-      SPRING_JPA_SHOW_SQL: 'false'
-      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: 'true'
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQL8Dialect
-      # 文件上传配置
-      FILE_UPLOAD_PATH: /var/lib/campusforum/uploads
-      FILE_UPLOAD_MAX_SIZE: 20971520
-      SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 20MB
-      SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 20MB
-      # 应用配置
-      SPRING_APPLICATION_NAME: CampusForum
-      SERVER_PORT: 8080
-      SERVER_SERVLET_CONTEXT_PATH: /
-      SERVER_TOMCAT_URI_ENCODING: UTF-8
-      # 时区
-      TZ: Asia/Shanghai
-      # 日志级别
-      LOGGING_LEVEL_ROOT: INFO
-      LOGGING_LEVEL_COM_CAMPUSFORUM: DEBUG
-    volumes:
-      # 上传文件目录挂载
-      - ./uploads:/var/lib/campusforum/uploads
-      # 日志目录挂载
-      - ./logs:/var/lib/campusforum/logs
+      MONGODB_URI: mongodb://mongodb:27017/anon-qa
+      JWT_SECRET: ${JWT_SECRET:-change_this_secret_in_production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      PORT: 5000
+      NODE_ENV: production
     networks:
-      - campusforum-network
+      - anon-qa-network
     depends_on:
-      db:
+      mongodb:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/api/questions"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 20s
+    restart: unless-stopped
+
+  # React前端服务（通过Nginx提供）
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: /api
+    container_name: anon-qa-frontend
+    ports:
+      - "80:80"
+    networks:
+      - anon-qa-network
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:
-  # MySQL数据卷
-  mysql-data:
+  # MongoDB数据卷
+  mongo-data:
     driver: local
 
 networks:
   # 自定义网络
-  campusforum-network:
+  anon-qa-network:
     driver: bridge
