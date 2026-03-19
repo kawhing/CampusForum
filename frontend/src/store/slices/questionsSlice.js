@@ -21,6 +21,9 @@ export const fetchQuestion = createAsyncThunk(
     try {
       const { id, countView } =
         typeof payload === 'string' ? { id: payload, countView: true } : payload || {};
+      if (!id) {
+        return rejectWithValue('问题ID无效');
+      }
       const params = countView === false ? { countView: 'false' } : undefined;
       const response = await getQuestionApi(id, params);
       return response.data;
