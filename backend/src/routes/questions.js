@@ -10,7 +10,7 @@ const { requireRole } = require('../middleware/roles');
 router.get('/', optionalAuth, getQuestions);
 router.post('/', authenticate, createQuestion);
 router.get('/categories', getCategories);
-router.get('/:id', getQuestion);
+router.get('/:id', optionalAuth, getQuestion);
 router.put('/:id', authenticate, updateQuestion);
 router.delete('/:id', authenticate, requireRole('admin'), deleteQuestion);
 

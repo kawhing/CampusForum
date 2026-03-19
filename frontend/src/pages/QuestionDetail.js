@@ -54,6 +54,7 @@ import {
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
+const MAX_VIEWED_QUESTIONS = 100;
 
 const ANSWER_SORT_OPTIONS = [
   { value: 'time', label: '最新' },
@@ -430,7 +431,21 @@ export default function QuestionDetail() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchQuestion(id));
+    const viewedKey = 'viewed_questions';
+    let viewed = [];
+    try {
+      viewed = JSON.parse(localStorage.getItem(viewedKey) || '[]');
+    } catch (e) {
+      viewed = [];
+    }
+    const hasViewed = viewed.includes(id);
+
+    if (!hasViewed) {
+      const trimmed = viewed.concat(id).slice(-MAX_VIEWED_QUESTIONS);
+      localStorage.setItem(viewedKey, JSON.stringify(trimmed));
+    }
+
+    dispatch(fetchQuestion({ id, countView: !hasViewed }));
   }, [dispatch, id]);
 
   const loadAnswers = useCallback(() => {

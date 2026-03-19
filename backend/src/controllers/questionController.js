@@ -3,6 +3,8 @@ const Question = require('../models/Question');
 const Answer = require('../models/Answer');
 const Comment = require('../models/Comment');
 
+const VIEWED_BY_LIMIT = 5000;
+
 const createQuestion = async (req, res) => {
   try {
     const { title, content, category } = req.body;
@@ -84,14 +86,41 @@ const getQuestion = async (req, res) => {
       return res.status(400).json({ message: 'Invalid question ID' });
     }
 
-    const question = await Question.findByIdAndUpdate(
-      id,
-      { $inc: { viewCount: 1 } },
-      { new: true }
-    ).populate('createdBy', 'username');
+    const countViewFlag = (req.query.countView || '').toString();
+    const shouldCountView = countViewFlag !== 'false' && countViewFlag !== '0';
+
+    let question;
+
+    if (shouldCountView) {
+      const viewerObjectId = req.user?._id;
+      const viewerId = viewerObjectId?.toString();
+
+      if (viewerId) {
+        question = await Question.findOneAndUpdate(
+          { _id: id, viewedBy: { $ne: viewerObjectId } },
+          { $addToSet: { viewedBy: viewerObjectId }, $inc: { viewCount: 1 } },
+          { new: true }
+        ).populate('createdBy', 'username');
+      } else {
+        question = await Question.findByIdAndUpdate(
+          id,
+          { $inc: { viewCount: 1 } },
+          { new: true }
+        ).populate('createdBy', 'username');
+      }
+    }
+
+    if (!question) {
+      question = await Question.findById(id).populate('createdBy', 'username');
+    }
 
     if (!question) {
       return res.status(404).json({ message: 'Question not found' });
+    }
+
+    if (shouldCountView && question.viewedBy?.length > VIEWED_BY_LIMIT) {
+      question.viewedBy = question.viewedBy.slice(-VIEWED_BY_LIMIT);
+      await question.save();
     }
 
     return res.status(200).json({ question });
