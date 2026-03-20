@@ -202,17 +202,28 @@ const createAppeal = async (req, res) => {
     // 举报扣除被举报人的信任分
     let targetOwnerId = null;
     if (targetType === 'answer') {
-      const answer = await Answer.findById(targetId).select('createdBy');
-      targetOwnerId = answer?.createdBy;
+      const answer = await Answer.findById(targetId).select('createdBy isDeleted');
+      if (!answer || answer.isDeleted) {
+        return res.status(404).json({ message: 'Reported answer not found' });
+      }
+      targetOwnerId = answer.createdBy;
     } else if (targetType === 'question') {
-      const question = await Question.findById(targetId).select('createdBy');
-      targetOwnerId = question?.createdBy;
+      const question = await Question.findById(targetId).select('createdBy isArchived');
+      if (!question) {
+        return res.status(404).json({ message: 'Reported question not found' });
+      }
+      targetOwnerId = question.createdBy;
     }
     if (targetOwnerId) {
-      await User.updateOne(
-        { _id: targetOwnerId },
-        { $inc: { trustScore: -2 }, $max: { trustScore: 0 } }
-      );
+      await User.findByIdAndUpdate(targetOwnerId, [
+        {
+          $set: {
+            trustScore: {
+              $max: [{ $subtract: ['$trustScore', 2] }, 0]
+            }
+          }
+        }
+      ]);
     }
 
     const appeal = new Appeal({
