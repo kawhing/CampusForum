@@ -32,9 +32,10 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   ClockCircleOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   getProfile,
   getMyQuestions,
@@ -44,7 +45,10 @@ import {
   getNotifications,
   markNotificationRead,
   createAppeal,
+  updateProfile,
+  changePassword,
 } from '../api';
+import { setCredentials, setUser } from '../store/slices/authSlice';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -77,6 +81,14 @@ const ROLE_MAP = {
   admin: { label: '管理员', color: 'red' },
   moderator: { label: '版主', color: 'orange' },
   user: { label: '普通用户', color: 'blue' },
+};
+
+const extractUserOrThrow = (data) => {
+  const updatedUser = data?.user;
+  if (!updatedUser) {
+    throw new Error('MISSING_USER_DATA');
+  }
+  return updatedUser;
 };
 
 function UserInfoCard({ user }) {
@@ -398,6 +410,153 @@ function MyAppeals() {
   );
 }
 
+function AccountSettings({ user, onProfileUpdated }) {
+  const dispatch = useDispatch();
+  const [profileForm] = Form.useForm();
+  const [passwordForm] = Form.useForm();
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      profileForm.setFieldsValue({
+        username: user.username,
+        email: user.email,
+      });
+    }
+  }, [user, profileForm]);
+
+  const handleProfileSubmit = async (values) => {
+    setSavingProfile(true);
+    try {
+      const res = await updateProfile(values);
+      const updatedUser = extractUserOrThrow(res.data);
+      dispatch(setUser(updatedUser));
+      onProfileUpdated?.(updatedUser);
+      message.success('个人信息已更新');
+    } catch (err) {
+      if (err?.message === 'MISSING_USER_DATA') {
+        console.error('Profile update missing user data', err);
+        message.error('更新失败，请刷新页面重试');
+      } else {
+        message.error(err.response?.data?.message || '更新失败，请稍后重试');
+      }
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handlePasswordSubmit = async ({ currentPassword, newPassword }) => {
+    setSavingPassword(true);
+    try {
+      const res = await changePassword({ currentPassword, newPassword });
+      const updatedUser = extractUserOrThrow(res.data);
+      if (res.data.token) {
+        dispatch(setCredentials({ user: updatedUser, token: res.data.token }));
+      } else {
+        dispatch(setUser(updatedUser));
+      }
+      onProfileUpdated?.(updatedUser);
+      message.success('密码修改成功');
+      passwordForm.resetFields();
+    } catch (err) {
+      if (err?.message === 'MISSING_USER_DATA') {
+        console.error('Password change missing user data', err);
+        message.error('更新失败，请刷新页面重试');
+      } else {
+        message.error(err.response?.data?.message || '密码修改失败，请稍后重试');
+      }
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  return (
+    <Row gutter={[24, 24]}>
+      <Col xs={24} md={12}>
+        <Card title="基本信息" bordered>
+          <Form layout="vertical" form={profileForm} onFinish={handleProfileSubmit}>
+            <Form.Item
+              name="username"
+              label="用户名"
+              rules={[{ required: true, message: '请输入用户名' }]}
+            >
+              <Input placeholder="请输入新的用户名" />
+            </Form.Item>
+            <Form.Item
+              name="email"
+              label="邮箱"
+              rules={[
+                { required: true, message: '请输入邮箱' },
+                { type: 'email', message: '请输入有效的邮箱地址' },
+              ]}
+            >
+              <Input placeholder="请输入新的邮箱地址" />
+            </Form.Item>
+            <Form.Item>
+              <Space>
+                <Button type="primary" htmlType="submit" loading={savingProfile}>
+                  保存修改
+                </Button>
+                <Button onClick={() => profileForm.resetFields()}>重置</Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Card>
+      </Col>
+      <Col xs={24} md={12}>
+        <Card title="修改密码" bordered>
+          <Form layout="vertical" form={passwordForm} onFinish={handlePasswordSubmit}>
+            <Form.Item
+              name="currentPassword"
+              label="当前密码"
+              rules={[{ required: true, message: '请输入当前密码' }]}
+            >
+              <Input.Password placeholder="请输入当前密码" autoComplete="current-password" />
+            </Form.Item>
+            <Form.Item
+              name="newPassword"
+              label="新密码"
+              rules={[
+                { required: true, message: '请输入新密码' },
+                { min: 6, message: '密码至少6位' },
+              ]}
+            >
+              <Input.Password placeholder="请输入新密码" autoComplete="new-password" />
+            </Form.Item>
+            <Form.Item
+              name="confirmPassword"
+              label="确认新密码"
+              dependencies={['newPassword']}
+              rules={[
+                { required: true, message: '请再次输入新密码' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('newPassword') === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error('两次输入的密码不一致'));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password placeholder="请再次输入新密码" autoComplete="new-password" />
+            </Form.Item>
+            <Form.Item>
+              <Space>
+                <Button type="primary" htmlType="submit" loading={savingPassword}>
+                  更新密码
+                </Button>
+                <Button onClick={() => passwordForm.resetFields()}>清空</Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Card>
+      </Col>
+    </Row>
+  );
+}
+
 function Notifications() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -510,6 +669,12 @@ export default function Profile() {
     { key: 'questions', label: '我的提问', icon: <QuestionCircleOutlined />, children: <MyQuestions /> },
     { key: 'answers', label: '我的回答', icon: <MessageOutlined />, children: <MyAnswers /> },
     { key: 'favorites', label: '我的收藏', icon: <StarOutlined />, children: <MyFavorites /> },
+    {
+      key: 'settings',
+      label: '账号设置',
+      icon: <SettingOutlined />,
+      children: <AccountSettings user={displayUser} onProfileUpdated={setProfileData} />,
+    },
     { key: 'appeals', label: '我的申诉', icon: <ExclamationCircleOutlined />, children: <MyAppeals /> },
     { key: 'notifications', label: '通知', icon: <BellOutlined />, children: <Notifications /> },
   ];
