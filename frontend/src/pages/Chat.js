@@ -467,7 +467,8 @@ export default function Chat() {
                             <List.Item.Meta
                               avatar={
                                 (() => {
-                                  const canAddFriend = member.user?._id && member.user._id !== user._id;
+                                  const canAddFriend =
+                                    member.user?._id != null && member.user._id !== user._id;
                                   return (
                                     <Avatar
                                       style={canAddFriend ? { cursor: 'pointer' } : undefined}
@@ -476,14 +477,13 @@ export default function Chat() {
                                       onKeyDown={
                                         canAddFriend
                                           ? (e) => {
-                                              if (e.key === 'Enter' || e.key === ' ') {
+                                              if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
                                                 e.preventDefault();
                                                 handleAddFriend(member.user._id);
                                               }
                                             }
                                           : undefined
                                       }
-                                      title={canAddFriend ? '点击头像加好友' : undefined}
                                       aria-label={canAddFriend ? '点击头像加好友' : undefined}
                                       role={canAddFriend ? 'button' : undefined}
                                     >
