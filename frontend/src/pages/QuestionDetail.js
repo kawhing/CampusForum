@@ -290,14 +290,8 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId, accepted
           <Space size="small">
             <Avatar size="small" icon={<UserOutlined />} />
             <Text strong>
-              {answer.authorName || answer.author?.username || '匿名用户'}
+              {answer.anonymousLabel || '匿名回答者'}
             </Text>
-            {(answer.authorId === questionAuthorId ||
-              answer.author?.id === questionAuthorId) && (
-              <Tag color="green" style={{ fontSize: 11 }}>
-                提问者
-              </Tag>
-            )}
             <Text type="secondary" style={{ fontSize: 12 }}>
               <ClockCircleOutlined />{' '}
               {answer.createdAt
@@ -522,7 +516,11 @@ export default function QuestionDetail() {
   if (!currentQuestion) return null;
 
   const questionAuthorId =
-    currentQuestion.authorId || currentQuestion.author?.id;
+    currentQuestion.authorId ||
+    currentQuestion.createdBy?._id ||
+    currentQuestion.createdBy?.id ||
+    currentQuestion.author?._id ||
+    currentQuestion.author?.id;
 
   return (
     <div>

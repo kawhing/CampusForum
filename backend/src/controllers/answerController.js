@@ -5,6 +5,34 @@ const Comment = require('../models/Comment');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 
+const BAD_WORDS = ['傻逼', '去死', 'fuck', 'shit', '滚', '垃圾', '操你', 'nt'].map((w) => w.toLowerCase());
+const MINUTES_PER_HOUR = 60;
+const MS_PER_MINUTE = 60 * 1000;
+const LOW_TRUST_ANSWER_COOLDOWN_MINUTES = 24 * MINUTES_PER_HOUR; // 1 day
+const VERY_LOW_TRUST_COOLDOWN_MINUTES = 48 * MINUTES_PER_HOUR; // 2 days
+const LOW_TRUST_THRESHOLD = 40;
+const VERY_LOW_TRUST_THRESHOLD = 20;
+const ANONYMOUS_LABEL_PREFIX = '匿名回答者';
+const OFFENSIVE_CONTENT_PENALTY = 5;
+const VOTE_TRUST_WEIGHT_DIVISOR = 20;
+const MIN_VOTE_WEIGHT = 1;
+const AUTO_ACCEPT_LIKE_THRESHOLD = 10;
+const AUTO_ACCEPT_MESSAGE = '你的回答已因点赞数达到阈值被自动设为最佳答案';
+
+const containsBadWords = (text = '') => {
+  const lower = text.toLowerCase();
+  return BAD_WORDS.some((w) => lower.includes(w));
+};
+
+const adjustUserTrust = async (userId, delta) => {
+  if (!userId || delta === undefined || delta === null) return;
+  const user = await User.findById(userId).select('trustScore');
+  if (!user) return;
+  const current = typeof user.trustScore === 'number' ? user.trustScore : 0;
+  user.trustScore = Math.max(0, current + delta);
+  await user.save();
+};
+
 const createAnswer = async (req, res) => {
   try {
     const { questionId } = req.params;
@@ -24,19 +52,57 @@ const createAnswer = async (req, res) => {
       return res.status(400).json({ message: 'Cannot answer an archived question' });
     }
 
+    const responder = await User.findById(req.user._id);
+    if (!responder) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    const latestAnswer = await Answer.findOne({ createdBy: req.user._id })
+      .sort({ createdAt: -1 })
+      .select('createdAt');
+
+    if (latestAnswer && latestAnswer.createdAt && !Number.isNaN(new Date(latestAnswer.createdAt).getTime())) {
+      const minutesSinceLastAnswer = (Date.now() - new Date(latestAnswer.createdAt).getTime()) / MS_PER_MINUTE;
+      let cooldownMinutes = 0;
+      if (responder.trustScore < VERY_LOW_TRUST_THRESHOLD) {
+        cooldownMinutes = VERY_LOW_TRUST_COOLDOWN_MINUTES;
+      } else if (responder.trustScore < LOW_TRUST_THRESHOLD) {
+        cooldownMinutes = LOW_TRUST_ANSWER_COOLDOWN_MINUTES;
+      }
+      if (cooldownMinutes > 0 && minutesSinceLastAnswer < cooldownMinutes) {
+        const remainingMinutes = Math.ceil(cooldownMinutes - minutesSinceLastAnswer);
+        const remainingHours = Math.floor(remainingMinutes / 60);
+        const remainingMins = remainingMinutes % 60;
+        return res.status(429).json({
+          message: `Low trust cooldown: please wait ${remainingHours}h ${remainingMins}m before answering again`
+        });
+      }
+    }
+
+    const shouldHide = containsBadWords(content);
+
     const answer = new Answer({
       content: content.trim(),
       questionId,
-      createdBy: req.user._id
+      createdBy: req.user._id,
+      isHidden: shouldHide
     });
     await answer.save();
 
-    await Question.findByIdAndUpdate(questionId, {
-      $inc: { answerCount: 1 },
-      answered: true
-    });
+    if (!shouldHide) {
+      await Question.findByIdAndUpdate(questionId, {
+        $inc: { answerCount: 1 },
+        answered: true
+      });
+    }
 
-    if (question.createdBy && question.createdBy.toString() !== req.user._id.toString()) {
+    if (shouldHide) {
+      const updatedTrust = Math.max(0, (responder.trustScore || 0) - OFFENSIVE_CONTENT_PENALTY);
+      responder.trustScore = updatedTrust;
+      await responder.save();
+    }
+
+    if (!shouldHide && question.createdBy && question.createdBy.toString() !== req.user._id.toString()) {
       await Notification.create({
         userId: question.createdBy,
         message: `Your question "${question.title}" received a new answer.`,
@@ -45,7 +111,7 @@ const createAnswer = async (req, res) => {
       });
     }
 
-    return res.status(201).json({ answer });
+    return res.status(201).json({ answer, hidden: shouldHide });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
@@ -59,7 +125,7 @@ const acceptAnswer = async (req, res) => {
       return res.status(400).json({ message: 'Invalid answer ID' });
     }
     const answer = await Answer.findById(id).populate('createdBy', 'username');
-    if (!answer || answer.isDeleted) {
+    if (!answer || answer.isDeleted || answer.isHidden) {
       return res.status(404).json({ message: 'Answer not found' });
     }
     const question = await Question.findById(answer.questionId);
@@ -115,7 +181,7 @@ const getAnswers = async (req, res) => {
       sortOption = { isPinned: -1, createdAt: -1 };
     }
 
-    const answers = await Answer.find({ questionId, isDeleted: false })
+    const answers = await Answer.find({ questionId, isDeleted: false, isHidden: false })
       .sort(sortOption)
       .populate('createdBy', 'username helpValue trustScore');
 
@@ -126,7 +192,11 @@ const getAnswers = async (req, res) => {
       favoriteSet = new Set(req.user.favorites.map((fid) => fid.toString()));
     }
 
+    const createdOrder = [...answers].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const aliasMap = new Map(createdOrder.map((a, idx) => [a._id?.toString(), idx + 1]));
+
     const shaped = answers.map((a, idx) => {
+      const aliasIndex = aliasMap.get(a._id?.toString()) || idx + 1;
       const likedSet = new Set((a.likedBy || []).map((uid) => uid.toString()));
       const dislikedSet = new Set((a.dislikedBy || []).map((uid) => uid.toString()));
       const likedByMe = viewerId ? likedSet.has(viewerId) : false;
@@ -140,7 +210,7 @@ const getAnswers = async (req, res) => {
         likedByMe,
         dislikedByMe,
         favoritedByMe,
-        authorName: a.createdBy?.username,
+        anonymousLabel: `${ANONYMOUS_LABEL_PREFIX} #${aliasIndex}`,
         authorId: a.createdBy?._id,
         authorHelpValue: a.createdBy?.helpValue || 0,
         authorTrustScore: a.createdBy?.trustScore || 0,
@@ -155,7 +225,15 @@ const getAnswers = async (req, res) => {
       if (acceptedId && (b._id?.toString() === acceptedId || b.id === acceptedId)) return 1;
       if (a.pinned && !b.pinned) return -1;
       if (b.pinned && !a.pinned) return 1;
-      if (sortMode === 'time') {
+      if (sortMode === 'likes') {
+        const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
+        if (likeDiff !== 0) return likeDiff;
+        return (a.orderIndex || 0) - (b.orderIndex || 0);
+      } else if (sortMode === 'comments') {
+        const commentDiff = (b.commentCount || 0) - (a.commentCount || 0);
+        if (commentDiff !== 0) return commentDiff;
+        return (a.orderIndex || 0) - (b.orderIndex || 0);
+      } else if (sortMode === 'time') {
         const helpA = a.authorHelpValue || 0;
         const helpB = b.authorHelpValue || 0;
         if (helpA !== helpB) return helpB - helpA;
@@ -178,7 +256,7 @@ const updateAnswer = async (req, res) => {
       return res.status(400).json({ message: 'Invalid answer ID' });
     }
     const answer = await Answer.findById(id);
-    if (!answer || answer.isDeleted) {
+    if (!answer || answer.isDeleted || answer.isHidden) {
       return res.status(404).json({ message: 'Answer not found' });
     }
 
@@ -208,7 +286,7 @@ const deleteAnswer = async (req, res) => {
       return res.status(400).json({ message: 'Invalid answer ID' });
     }
     const answer = await Answer.findById(id);
-    if (!answer || answer.isDeleted) {
+    if (!answer || answer.isDeleted || answer.isHidden) {
       return res.status(404).json({ message: 'Answer not found' });
     }
 
@@ -234,27 +312,58 @@ const likeAnswer = async (req, res) => {
       return res.status(400).json({ message: 'Invalid answer ID' });
     }
     const answer = await Answer.findById(id);
-    if (!answer || answer.isDeleted) {
+    if (!answer || answer.isDeleted || answer.isHidden) {
       return res.status(404).json({ message: 'Answer not found' });
     }
 
     const userId = req.user._id;
+    const voter = await User.findById(userId).select('trustScore');
+    const voterTrust = voter?.trustScore || 0;
+    const voteWeight = Math.max(MIN_VOTE_WEIGHT, Math.floor(voterTrust / VOTE_TRUST_WEIGHT_DIVISOR));
+
     const alreadyLiked = answer.likedBy.some((uid) => uid.toString() === userId.toString());
     const alreadyDisliked = answer.dislikedBy.some((uid) => uid.toString() === userId.toString());
+    let trustDelta = 0;
 
     if (alreadyLiked) {
       answer.likedBy = answer.likedBy.filter((uid) => uid.toString() !== userId.toString());
       answer.likes = Math.max(0, answer.likes - 1);
+      trustDelta -= voteWeight;
     } else {
       if (alreadyDisliked) {
         answer.dislikedBy = answer.dislikedBy.filter((uid) => uid.toString() !== userId.toString());
         answer.dislikes = Math.max(0, answer.dislikes - 1);
+        trustDelta += voteWeight; // remove previous penalty
       }
       answer.likedBy.push(userId);
       answer.likes += 1;
+      trustDelta += voteWeight;
     }
 
     await answer.save();
+    if (answer.createdBy && trustDelta !== 0) {
+      await adjustUserTrust(answer.createdBy, trustDelta);
+    }
+
+    // Auto-accept when likes reach threshold and no accepted answer yet
+    const question = await Question.findById(answer.questionId);
+    if (question && answer.likes >= AUTO_ACCEPT_LIKE_THRESHOLD) {
+      const updateResult = await Question.updateOne(
+        { _id: question._id, acceptedAnswerId: null },
+        { $set: { acceptedAnswerId: answer._id, answered: true, solvedAt: new Date() } }
+      );
+      if (updateResult.modifiedCount > 0 && answer.createdBy) {
+        await User.findByIdAndUpdate(answer.createdBy, { $inc: { helpValue: 1, trustScore: 1 } });
+        const autoAcceptMessage = question.title ? `${AUTO_ACCEPT_MESSAGE}: ${question.title}` : AUTO_ACCEPT_MESSAGE;
+        await Notification.create({
+          userId: answer.createdBy,
+          message: autoAcceptMessage,
+          type: 'accept',
+          relatedId: answer._id
+        });
+      }
+    }
+
     return res.status(200).json({
       likes: answer.likes,
       dislikes: answer.dislikes,
@@ -274,27 +383,39 @@ const dislikeAnswer = async (req, res) => {
       return res.status(400).json({ message: 'Invalid answer ID' });
     }
     const answer = await Answer.findById(id);
-    if (!answer || answer.isDeleted) {
+    if (!answer || answer.isDeleted || answer.isHidden) {
       return res.status(404).json({ message: 'Answer not found' });
     }
 
     const userId = req.user._id;
+    const voter = await User.findById(userId).select('trustScore');
+    const voterTrust = voter?.trustScore || 0;
+    const voteWeight = Math.max(MIN_VOTE_WEIGHT, Math.floor(voterTrust / VOTE_TRUST_WEIGHT_DIVISOR));
+
     const alreadyDisliked = answer.dislikedBy.some((uid) => uid.toString() === userId.toString());
     const alreadyLiked = answer.likedBy.some((uid) => uid.toString() === userId.toString());
+    let trustDelta = 0;
 
     if (alreadyDisliked) {
       answer.dislikedBy = answer.dislikedBy.filter((uid) => uid.toString() !== userId.toString());
       answer.dislikes = Math.max(0, answer.dislikes - 1);
+      trustDelta += voteWeight; // remove previous penalty
     } else {
       if (alreadyLiked) {
         answer.likedBy = answer.likedBy.filter((uid) => uid.toString() !== userId.toString());
         answer.likes = Math.max(0, answer.likes - 1);
+        trustDelta -= voteWeight; // remove previous reward
       }
       answer.dislikedBy.push(userId);
       answer.dislikes += 1;
+      trustDelta -= voteWeight;
     }
 
     await answer.save();
+    if (answer.createdBy && trustDelta !== 0) {
+      await adjustUserTrust(answer.createdBy, trustDelta);
+    }
+
     return res.status(200).json({
       likes: answer.likes,
       dislikes: answer.dislikes,

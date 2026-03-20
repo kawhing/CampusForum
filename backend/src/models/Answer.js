@@ -11,6 +11,7 @@ const AnswerSchema = new mongoose.Schema({
   dislikedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   isPinned: { type: Boolean, default: false },
   isDeleted: { type: Boolean, default: false },
+  isHidden: { type: Boolean, default: false },
   commentCount: { type: Number, default: 0 }
 });
 
