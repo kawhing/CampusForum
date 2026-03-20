@@ -26,7 +26,7 @@ const containsBadWords = (text = '') => {
 };
 
 const adjustUserTrust = async (userId, delta) => {
-  if (!userId || delta === undefined || delta === null) return;
+  if (!userId || delta === undefined) return;
   const user = await User.findById(userId).select('trustScore');
   if (!user) return;
   const current = typeof user.trustScore === 'number' ? user.trustScore : 0;

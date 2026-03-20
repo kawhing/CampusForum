@@ -387,9 +387,8 @@ const likeAnswer = async (req, res) => {
       trustDelta += voteWeight;
     }
 
-    const recoveryAlreadyGranted = (answer.trustRecoveryVoters || []).some(
-      (uid) => uid.toString() === userId.toString()
-    );
+    const recoverySet = new Set((answer.trustRecoveryVoters || []).map((uid) => uid.toString()));
+    const recoveryAlreadyGranted = recoverySet.has(userId.toString());
     const qualifiesForRecovery =
       isNewLike &&
       voterTrust < TRUST_BLOCK_THRESHOLD &&
@@ -400,9 +399,11 @@ const likeAnswer = async (req, res) => {
 
     if (qualifiesForRecovery) {
       await adjustUserTrust(userId, TRUST_RECOVERY_REWARD);
-      answer.trustRecoveryVoters = Array.isArray(answer.trustRecoveryVoters)
-        ? [...answer.trustRecoveryVoters, userId]
-        : [userId];
+      const updated = Array.from(
+        new Set([...(answer.trustRecoveryVoters || []).map((uid) => uid.toString()), userId.toString()])
+      );
+      // 防止无限增长，保留最新 200 个
+      answer.trustRecoveryVoters = updated.slice(-200);
     }
 
     await answer.save();

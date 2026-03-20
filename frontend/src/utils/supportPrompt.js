@@ -34,7 +34,7 @@ export const ensureSupportPrompt = (text = '') =>
 
     let instance = null;
     const openSupport = () => {
-      window.open('/support', '_blank', 'noopener');
+      window.open('/support', '_blank', 'noopener,noreferrer');
     };
 
     instance = Modal.confirm({

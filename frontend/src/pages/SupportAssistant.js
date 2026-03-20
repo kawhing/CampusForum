@@ -25,7 +25,7 @@ const CONTACTS = [
   { label: '紧急情况', value: '请立即联系身边可信任的人或当地紧急救援电话。' }
 ];
 
-const SIMULATED_RESPONSE_DELAY_MS = 150; // mimic思考/打字延迟，避免瞬时刷屏
+const SIMULATED_RESPONSE_DELAY_MS = 150; // 模拟思考/打字延迟，避免瞬时刷屏
 
 const supportiveReply = (text) => {
   const keyword = findSensitiveKeyword(text);
