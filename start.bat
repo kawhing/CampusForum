@@ -43,7 +43,7 @@ if not exist .env (
 )
 
 echo 提示：可选的 safety-model（轻量安全模型）默认未启用，避免自动下载大模型。
-echo 如需启用，请在启动后运行：%DC% --profile safety up -d safety-model
+echo 如需启用，请运行：%DC% --profile safety up -d safety-model
 
 echo 正在构建应用镜像...
 call %DC% build --no-cache
