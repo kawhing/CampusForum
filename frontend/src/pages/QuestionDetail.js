@@ -52,6 +52,7 @@ import {
   createComment,
   deleteComment,
 } from '../api';
+import { ensureSupportPrompt } from '../utils/supportPrompt';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -83,6 +84,8 @@ function CommentSection({ answerId, currentUser }) {
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
+    const allowSubmit = await ensureSupportPrompt(newComment);
+    if (!allowSubmit) return;
     setSubmitting(true);
     try {
       await createComment(answerId, { content: newComment });
@@ -233,6 +236,8 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId, accepted
 
   const handleEdit = async () => {
     if (!editContent.trim()) return;
+    const allowSubmit = await ensureSupportPrompt(editContent);
+    if (!allowSubmit) return;
     setEditSubmitting(true);
     try {
       await updateAnswer(answerId, { content: editContent });
@@ -476,6 +481,8 @@ export default function QuestionDetail() {
       message.warning('请输入回答内容');
       return;
     }
+    const allowSubmit = await ensureSupportPrompt(newAnswer);
+    if (!allowSubmit) return;
     setSubmitting(true);
     try {
       await createAnswer(id, { content: newAnswer });

@@ -12,6 +12,7 @@ import {
 } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { createQuestion, getCategories } from '../api';
+import { ensureSupportPrompt } from '../utils/supportPrompt';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -35,6 +36,10 @@ export default function AskQuestion() {
     const category = Array.isArray(values.category)
       ? values.category[0]
       : values.category;
+
+    const combinedText = `${values.title || ''} ${values.content || ''}`;
+    const allowSubmit = await ensureSupportPrompt(combinedText);
+    if (!allowSubmit) return;
 
     setLoading(true);
     setError(null);
