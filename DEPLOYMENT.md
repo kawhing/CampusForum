@@ -82,11 +82,6 @@ start.bat
 
 > 首次启动需要拉取镜像和构建，约需 2–5 分钟，请耐心等待。
 >
-> 🧠 可选的 `safety-model`（轻量文本风险模型）已放在 Compose Profile `safety` 下，默认不启动，以免在不需要时下载较大的模型/依赖。若需要启用，请执行：
-> ```bash
-> docker compose --profile safety up -d safety-model
-> ```
-
 ---
 
 ### 方式二：手动 Docker Compose
@@ -96,10 +91,8 @@ start.bat
 cp .env.example .env
 # 用编辑器打开 .env，将 JWT_SECRET 改为随机字符串
 
-# 2. 构建并启动（默认不包含 safety-model）
+# 2. 构建并启动
 docker compose up -d
-# 如需同时启用轻量安全模型服务（将按需下载模型）
-docker compose --profile safety up -d safety-model
 
 # 3. 查看状态
 docker compose ps

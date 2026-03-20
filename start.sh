@@ -40,9 +40,6 @@ if [ ! -f .env ]; then
     echo -e "${YELLOW}请编辑 .env 文件修改 JWT_SECRET 等敏感配置后重新运行。${NC}"
 fi
 
-echo -e "${YELLOW}提示：可选的 safety-model（轻量安全模型）默认未启用，避免自动下载大模型。${NC}"
-echo -e "${YELLOW}如需启用，请执行：${DC} --profile safety up -d safety-model${NC}"
-
 echo -e "${YELLOW}正在构建应用镜像...${NC}"
 $DC build --no-cache
 

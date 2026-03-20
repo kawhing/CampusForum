@@ -11,25 +11,11 @@
 - **响应式设计** - 完美适配桌面、平板、手机等各种设备
 - **美观UI** - 基于Ant Design的现代化界面设计
 - **Docker部署** - 一键启动，开箱即用
-- **心理援助引导** - 检测轻生/高风险关键词时自动弹窗联系方式，提供 AI 心理辅导页面入口，并对含脏话内容降低信誉分以保护社区氛围  
-  > 可选：如需更强的轻生类文本识别，可在 Docker 中额外部署轻量级中文安全模型服务（小参数情绪/风险分类模型），后端通过 HTTP/RPC 调用以补充关键词规则，不影响现有功能。
+- **心理援助引导** - 检测轻生/高风险关键词时自动弹窗联系方式，提供心理辅导页面入口，并对含脏话内容降低信誉分以保护社区氛围  
 
-### 可选：部署轻量级文本安全/心理风险模型（<1B 参数）
+### （已移除）文本安全/心理风险模型
 
-已在 `docker-compose.yml` 中加入 `safety-model` 服务（默认端口 8088，模型默认 `uer/roberta-base-chinese-cluecorpussmall`），但已使用 Compose Profile 关闭默认启动，避免在不需要时拉取大模型/依赖。如果暂时不想用，保持默认即可；需要时再手动开启：
-
-```bash
-# 启用并启动 safety-model（按需下载模型）
-docker compose --profile safety up -d safety-model
-# 或与其他服务一起启动并启用 profile
-docker compose --profile safety up -d
-```
-
-可配置的环境变量（`.env` 已示例）：
-
-- `SAFETY_MODEL_URL`：后端可调用的模型服务地址，默认为 `http://safety-model:8088`
-- `SAFETY_MODEL_NAME`：HuggingFace 文本分类模型名称，默认 `uer/roberta-base-chinese-cluecorpussmall`
-- `SAFETY_MODEL_DEVICE`：`cpu` 或 `cuda`
+应反馈要求，项目已取消附带的 AI 文本安全模型镜像，避免下载体积较大的模型依赖。现有关键词/信誉分规则仍可正常工作，如需自定义模型可自行扩展。
 
 ## 🛠️ 技术栈
 
