@@ -183,7 +183,7 @@ const getAnswers = async (req, res) => {
 
     const answers = await Answer.find({ questionId, isDeleted: false, isHidden: false })
       .sort(sortOption)
-      .populate('createdBy', 'username helpValue trustScore');
+      .populate('createdBy', 'helpValue trustScore');
 
     const viewerId = req.user?._id?.toString();
     let favoriteSet = new Set();
@@ -202,18 +202,20 @@ const getAnswers = async (req, res) => {
       const likedByMe = viewerId ? likedSet.has(viewerId) : false;
       const dislikedByMe = viewerId ? dislikedSet.has(viewerId) : false;
       const favoritedByMe = viewerId ? favoriteSet.has(a._id.toString()) : false;
+      const { createdBy, ...rest } = a.toObject();
+      const authorId = createdBy?._id || createdBy?.id || createdBy;
 
       return {
-        ...a.toObject(),
+        ...rest,
         likeCount: a.likes,
         dislikeCount: a.dislikes,
         likedByMe,
         dislikedByMe,
         favoritedByMe,
         anonymousLabel: `${ANONYMOUS_LABEL_PREFIX} #${aliasIndex}`,
-        authorId: a.createdBy?._id,
-        authorHelpValue: a.createdBy?.helpValue || 0,
-        authorTrustScore: a.createdBy?.trustScore || 0,
+        authorId,
+        authorHelpValue: createdBy?.helpValue || 0,
+        authorTrustScore: createdBy?.trustScore || 0,
         orderIndex: idx
       };
     });
@@ -478,9 +480,17 @@ const getComments = async (req, res) => {
 
     const comments = await Comment.find({ answerId: id, isDeleted: false })
       .sort({ createdAt: 1 })
-      .populate('createdBy', 'username');
+      .populate('createdBy', 'helpValue trustScore');
 
-    return res.status(200).json({ comments });
+    const shaped = comments.map((c) => {
+      const { createdBy, ...rest } = c.toObject();
+      return {
+        ...rest,
+        authorId: createdBy?._id || createdBy?.id || createdBy
+      };
+    });
+
+    return res.status(200).json({ comments: shaped });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
