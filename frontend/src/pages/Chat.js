@@ -390,7 +390,7 @@ export default function Chat() {
                           loading={messageLoading}
                           rowKey="_id"
                           dataSource={messages}
-                          style={{ maxHeight: 320, overflowY: 'auto' }}
+                          style={{ maxHeight: '60vh', minHeight: '40vh', overflowY: 'auto' }}
                           locale={{ emptyText: '还没有人发言' }}
                           renderItem={(item) => (
                             <List.Item>
@@ -466,7 +466,21 @@ export default function Chat() {
                           >
                             <List.Item.Meta
                               avatar={
-                                <Avatar>
+                                <Avatar
+                                  style={
+                                    member.user?._id !== user._id
+                                      ? { cursor: 'pointer' }
+                                      : undefined
+                                  }
+                                  onClick={
+                                    member.user?._id !== user._id
+                                      ? () => handleAddFriend(member.user?._id)
+                                      : undefined
+                                  }
+                                  title={
+                                    member.user?._id !== user._id ? '点击头像加好友' : undefined
+                                  }
+                                >
                                   {(member.nickname?.[0] || '?').toUpperCase()}
                                 </Avatar>
                               }
@@ -560,17 +574,17 @@ export default function Chat() {
                     }
                   >
                     {selectedFriendId ? (
-                      <>
-                        <List
-                          rowKey="_id"
-                          loading={friendLoading}
-                          dataSource={friendMessages}
-                          style={{ maxHeight: 320, overflowY: 'auto' }}
-                          locale={{ emptyText: '暂时没有聊天记录' }}
-                          renderItem={(item) => (
-                            <List.Item>
-                              <List.Item.Meta
-                                title={
+                        <>
+                          <List
+                            rowKey="_id"
+                            loading={friendLoading}
+                            dataSource={friendMessages}
+                            style={{ maxHeight: '60vh', minHeight: '40vh', overflowY: 'auto' }}
+                            locale={{ emptyText: '暂时没有聊天记录' }}
+                            renderItem={(item) => (
+                              <List.Item>
+                                <List.Item.Meta
+                                  title={
                                   <Space>
                                     <Text strong>{item.from?.username || '用户'}</Text>
                                     <Badge status={item.from?._id === user._id ? 'processing' : 'default'} />
