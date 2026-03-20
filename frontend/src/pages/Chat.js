@@ -274,14 +274,14 @@ export default function Chat() {
         onKeyDown={
           canAddFriend
             ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
                   e.preventDefault();
                   handleAddFriend(memberUserId);
                 }
               }
             : undefined
         }
-        aria-label={canAddFriend ? '点击头像加好友' : undefined}
+        aria-label={canAddFriend ? '点击头像加好友 / Add friend' : undefined}
         role={canAddFriend ? 'button' : undefined}
       >
         {(member.nickname?.[0] || '?').toUpperCase()}
