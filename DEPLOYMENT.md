@@ -180,6 +180,8 @@ docker compose up -d
 | `ADMIN_EMAIL` | `admin@campus.edu` | 默认管理员邮箱（首次启动自动创建） |
 | `ADMIN_PASSWORD` | `Admin123456` | 默认管理员密码（**⚠️ 部署后请立即修改**） |
 | `ADMIN_USERNAME` | `admin` | 默认管理员用户名 |
+| `ALLOW_ADMIN_PASSWORD_SYNC` | `true` | 是否在启动时同步管理员密码（禁用时设为 `false`） |
+| `ALLOW_ADMIN_SYNC_WHEN_BLOCKED` | `false` | 管理员被封禁时是否仍允许同步凭据（仅紧急恢复时设为 `true`） |
 
 ---
 

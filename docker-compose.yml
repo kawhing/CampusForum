@@ -35,6 +35,8 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@campus.edu}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123456}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ALLOW_ADMIN_PASSWORD_SYNC: ${ALLOW_ADMIN_PASSWORD_SYNC:-true}
+      ALLOW_ADMIN_SYNC_WHEN_BLOCKED: ${ALLOW_ADMIN_SYNC_WHEN_BLOCKED:-false}
     networks:
       - anon-qa-network
     depends_on:
