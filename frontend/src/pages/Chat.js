@@ -468,17 +468,24 @@ export default function Chat() {
                               avatar={
                                 <Avatar
                                   style={
-                                    member.user?._id !== user._id
+                                    member.user?._id && member.user._id !== user._id
                                       ? { cursor: 'pointer' }
                                       : undefined
                                   }
                                   onClick={
-                                    member.user?._id !== user._id
-                                      ? () => handleAddFriend(member.user?._id)
+                                    member.user?._id && member.user._id !== user._id
+                                      ? () => handleAddFriend(member.user._id)
                                       : undefined
                                   }
                                   title={
-                                    member.user?._id !== user._id ? '点击头像加好友' : undefined
+                                    member.user?._id && member.user._id !== user._id
+                                      ? '点击头像加好友'
+                                      : undefined
+                                  }
+                                  aria-label={
+                                    member.user?._id && member.user._id !== user._id
+                                      ? '点击头像加好友'
+                                      : undefined
                                   }
                                 >
                                   {(member.nickname?.[0] || '?').toUpperCase()}
