@@ -46,6 +46,7 @@ import {
   deleteAnswer,
   likeAnswer,
   dislikeAnswer,
+  acceptAnswer,
   favoriteAnswer,
   getComments,
   createComment,
@@ -169,7 +170,7 @@ function CommentSection({ answerId, currentUser }) {
   );
 }
 
-function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId }) {
+function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId, acceptedAnswerId, onAccept }) {
   const [liked, setLiked] = useState(answer.likedByMe || false);
   const [disliked, setDisliked] = useState(answer.dislikedByMe || false);
   const [favorited, setFavorited] = useState(answer.favoritedByMe || false);
@@ -186,6 +187,8 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId }) {
     (currentUser.id === (answer.authorId || answer.author?.id) ||
       currentUser._id === (answer.authorId || answer.author?._id));
   const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+  const canAccept = currentUser && (currentUser.id === questionAuthorId || currentUser._id === questionAuthorId || isAdmin);
+  const isAccepted = acceptedAnswerId && (acceptedAnswerId === answerId || acceptedAnswerId === answer._id?.toString());
 
   const handleLike = async () => {
     if (!currentUser) return message.warning('请先登录');
@@ -266,9 +269,14 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId }) {
     <Card
       style={{
         marginBottom: 16,
-        border: answer.pinned ? '2px solid #1890ff' : undefined,
+        border: isAccepted ? '2px solid #52c41a' : answer.pinned ? '2px solid #1890ff' : undefined,
       }}
     >
+      {isAccepted && (
+        <div style={{ marginBottom: 8 }}>
+          <Tag color="green">已采纳</Tag>
+        </div>
+      )}
       {answer.pinned && (
         <div style={{ marginBottom: 8 }}>
           <Tag icon={<PushpinFilled />} color="blue">
@@ -321,6 +329,11 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId }) {
                 />
               </Tooltip>
             </Space>
+          )}
+          {canAccept && !isAccepted && (
+            <Button type="primary" size="small" onClick={() => onAccept(answerId)}>
+              采纳为最佳
+            </Button>
           )}
         </Col>
       </Row>
@@ -429,6 +442,7 @@ export default function QuestionDetail() {
   const [answerSort, setAnswerSort] = useState('time');
   const [newAnswer, setNewAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [acceptedAnswerId, setAcceptedAnswerId] = useState(null);
 
   useEffect(() => {
     const viewedKey = 'viewed_questions';
@@ -451,7 +465,10 @@ export default function QuestionDetail() {
   const loadAnswers = useCallback(() => {
     setAnswersLoading(true);
     getAnswers(id, { sort: answerSort })
-      .then((res) => setAnswers(res.data.answers || res.data || []))
+      .then((res) => {
+        setAnswers(res.data.answers || res.data || []);
+        setAcceptedAnswerId(res.data.acceptedAnswerId || null);
+      })
       .catch(() => {})
       .finally(() => setAnswersLoading(false));
   }, [id, answerSort]);
@@ -476,6 +493,17 @@ export default function QuestionDetail() {
       message.error(err.response?.data?.message || '发布回答失败');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAccept = async (answerId) => {
+    try {
+      await acceptAnswer(answerId);
+      message.success('已采纳为最佳答案');
+      loadAnswers();
+      dispatch(fetchQuestion(id));
+    } catch (err) {
+      message.error(err.response?.data?.message || '操作失败');
     }
   };
 
@@ -505,6 +533,10 @@ export default function QuestionDetail() {
               <Tag color="blue">{currentQuestion.category}</Tag>
             )}
             {currentQuestion.archived && <Tag color="red">已归档</Tag>}
+            {currentQuestion.acceptedAnswerId && <Tag color="green">已解决</Tag>}
+            {currentQuestion.isUrgent && (
+              <Tag color="volcano">紧急求助</Tag>
+            )}
           </Space>
 
           <Title level={3} style={{ marginBottom: 0 }}>
@@ -541,6 +573,14 @@ export default function QuestionDetail() {
               message="该问题已被归档"
               description={`归档原因：${currentQuestion.archiveReason}`}
               type="warning"
+              showIcon
+            />
+          )}
+          {currentQuestion.isUrgent && (
+            <Alert
+              message="检测到可能的紧急求助"
+              description="系统检测到可能的高风险内容，已提示校心理中心/辅导员联系方式，请管理员优先关注。"
+              type="error"
               showIcon
             />
           )}
@@ -582,6 +622,8 @@ export default function QuestionDetail() {
               currentUser={currentUser}
               onRefresh={loadAnswers}
               questionAuthorId={questionAuthorId}
+              acceptedAnswerId={acceptedAnswerId}
+              onAccept={handleAccept}
             />
           ))
         )}

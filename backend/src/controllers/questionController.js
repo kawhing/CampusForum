@@ -2,30 +2,69 @@ const mongoose = require('mongoose');
 const Question = require('../models/Question');
 const Answer = require('../models/Answer');
 const Comment = require('../models/Comment');
+const User = require('../models/User');
 
 const VIEWED_BY_LIMIT = 5000;
+const RISK_KEYWORDS = ['自杀', '自残', '抑郁', '想死', '伤害自己', '暴力', '杀', '攻击'];
+const MIN_TRUST_FOR_COOLDOWN = 20;
+const LOW_TRUST_COOLDOWN_MINUTES = 10;
+const HOURLY_QUESTION_LIMIT = 3;
 
 const createQuestion = async (req, res) => {
   try {
     const { title, content, category } = req.body;
-    if (!title || title.trim().length < 10) {
-      return res.status(400).json({ message: 'Title must be at least 10 characters' });
+    if (!title || title.trim().length < 15) {
+      return res.status(400).json({ message: 'Title must be at least 15 characters' });
     }
-    if (!content || content.trim().length < 20) {
-      return res.status(400).json({ message: 'Content must be at least 20 characters' });
+    if (!content || content.trim().length < 50) {
+      return res.status(400).json({ message: 'Content must be at least 50 characters with clear description' });
     }
     if (!category || !category.trim()) {
       return res.status(400).json({ message: 'Category is required' });
     }
 
+    // 课程维度问答池：必须选择课程标签
+    const courseTag = category.trim();
+
+    // 反骚扰频控：1小时最多3问
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentCount = await Question.countDocuments({
+      createdBy: req.user._id,
+      createdAt: { $gte: oneHourAgo }
+    });
+    if (recentCount >= HOURLY_QUESTION_LIMIT) {
+      return res.status(429).json({ message: 'Posting limit reached: max 3 questions per hour' });
+    }
+
+    // 低信任度冷却
+    const creator = await User.findById(req.user._id);
+    if (creator && creator.trustScore < MIN_TRUST_FOR_COOLDOWN) {
+      const lastQuestion = await Question.findOne({ createdBy: req.user._id }).sort({ createdAt: -1 });
+      if (lastQuestion && Date.now() - lastQuestion.createdAt.getTime() < LOW_TRUST_COOLDOWN_MINUTES * 60 * 1000) {
+        return res.status(429).json({ message: `Low trust score cooldown: please wait ${LOW_TRUST_COOLDOWN_MINUTES} minutes between posts` });
+      }
+    }
+
+    // 风险内容识别
+    const combinedText = `${title} ${content}`.toLowerCase();
+    const matchedRisk = RISK_KEYWORDS.find((kw) => combinedText.includes(kw.toLowerCase()));
+    const isUrgent = Boolean(matchedRisk);
+
     const question = new Question({
       title: title.trim(),
       content: content.trim(),
-      category: category.trim(),
+      category: courseTag,
+      isUrgent,
+      urgentReason: matchedRisk ? `命中高风险关键词：${matchedRisk}` : undefined,
       createdBy: req.user._id
     });
     await question.save();
-    return res.status(201).json({ question });
+    const contact = process.env.SCHOOL_HELP_CONTACT || '请联系学校心理中心或辅导员';
+    const payload = { question };
+    if (isUrgent) {
+      payload.urgent = { contact, reason: question.urgentReason };
+    }
+    return res.status(201).json(payload);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
@@ -61,7 +100,8 @@ const getQuestions = async (req, res) => {
     } else if (sort === 'likes') {
       sortOption = { answerCount: -1 };
     } else {
-      sortOption = { createdAt: -1 };
+      // 默认优先曝光待解决问题（answered: 0 未解决在前，1 已解决在后）
+      sortOption = { answered: 1, createdAt: -1 };
     }
 
     const total = await Question.countDocuments(filter);

@@ -6,6 +6,10 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true },
   username: { type: String, required: true, trim: true },
   role: { type: String, enum: ['user', 'moderator', 'admin'], default: 'user' },
+  // 信任分，用于约束匿名发帖质量与频控
+  trustScore: { type: Number, default: 50, min: 0 },
+  // 互助值，回答被采纳后提升，用于优先展示
+  helpValue: { type: Number, default: 0, min: 0 },
   isBlocked: { type: Boolean, default: false },
   blockReason: { type: String },
   activeToken: { type: String },

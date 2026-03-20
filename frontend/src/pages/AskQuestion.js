@@ -80,11 +80,11 @@ export default function AskQuestion() {
           <Form.Item
             name="title"
             label="问题标题"
-            rules={[
-              { required: true, message: '请输入问题标题' },
-              { min: 10, message: '问题标题至少需要10个字符' },
-              { max: 200, message: '问题标题不能超过200个字符' },
-            ]}
+          rules={[
+            { required: true, message: '请输入问题标题' },
+            { min: 15, message: '问题标题至少需要15个字符' },
+            { max: 200, message: '问题标题不能超过200个字符' },
+          ]}
           >
             <Input
               placeholder="请用简洁的语言描述你的问题"
@@ -113,11 +113,11 @@ export default function AskQuestion() {
           <Form.Item
             name="content"
             label="问题内容"
-            rules={[
-              { required: true, message: '请输入问题内容' },
-              { min: 20, message: '问题内容至少需要20个字符' },
-              { max: 10000, message: '问题内容不能超过10000个字符' },
-            ]}
+          rules={[
+            { required: true, message: '请输入问题内容' },
+            { min: 50, message: '问题内容至少需要50个字符，明确描述你的问题和期望' },
+            { max: 10000, message: '问题内容不能超过10000个字符' },
+          ]}
           >
             <TextArea
               placeholder="详细描述你的问题，提供足够的背景信息有助于获得更好的回答..."

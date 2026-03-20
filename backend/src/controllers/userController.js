@@ -188,7 +188,7 @@ const markNotificationRead = async (req, res) => {
 
 const createAppeal = async (req, res) => {
   try {
-    const { targetId, targetType, reason } = req.body;
+    const { targetId, targetType, reason, evidenceText, evidenceUrls } = req.body;
     if (!targetId || !mongoose.Types.ObjectId.isValid(targetId)) {
       return res.status(400).json({ message: 'Valid targetId is required' });
     }
@@ -203,7 +203,9 @@ const createAppeal = async (req, res) => {
       userId: req.user._id,
       targetId,
       targetType,
-      reason: reason.trim()
+      reason: reason.trim(),
+      evidenceText: evidenceText?.trim(),
+      evidenceUrls: Array.isArray(evidenceUrls) ? evidenceUrls : undefined
     });
     await appeal.save();
     return res.status(201).json({ appeal });

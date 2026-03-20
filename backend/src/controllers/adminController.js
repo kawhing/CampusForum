@@ -323,9 +323,13 @@ const resolveAppeal = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid appeal ID' });
     }
-    const { status, adminResponse } = req.body;
+    const { status, adminResponse, evidenceText, evidenceUrls } = req.body;
+    const reason = (req.body.reason || '').trim();
     if (!status || !['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'Status must be approved or rejected' });
+    }
+    if (!reason) {
+      return res.status(400).json({ message: 'Field "reason" is required when resolving appeals' });
     }
 
     const appeal = await Appeal.findById(id);
@@ -333,9 +337,10 @@ const resolveAppeal = async (req, res) => {
       return res.status(404).json({ message: 'Appeal not found' });
     }
 
-    const reason = req.body.reason || adminResponse || 'No reason provided';
     appeal.status = status;
-    appeal.adminResponse = adminResponse || '';
+    appeal.adminResponse = adminResponse || reason;
+    if (evidenceText) appeal.evidenceText = evidenceText;
+    if (Array.isArray(evidenceUrls)) appeal.evidenceUrls = evidenceUrls;
     await appeal.save();
 
     await OperationLog.create({
@@ -362,13 +367,73 @@ const resolveAppeal = async (req, res) => {
 
 const getStats = async (req, res) => {
   try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const [users, questions, answers, pendingAppeals] = await Promise.all([
       User.countDocuments(),
       Question.countDocuments(),
       Answer.countDocuments({ isDeleted: false }),
       Appeal.countDocuments({ status: 'pending' })
     ]);
-    return res.status(200).json({ users, questions, answers, pendingAppeals });
+
+    const recentQuestions = await Question.find({ createdAt: { $gte: twentyFourHoursAgo } });
+    const firstResponseCount = recentQuestions.filter((q) => q.answerCount > 0).length;
+    const firstResponseRate = recentQuestions.length ? firstResponseCount / recentQuestions.length : 0;
+
+    const recentArchives = await Question.countDocuments({ isArchived: true, createdAt: { $gte: twentyFourHoursAgo } });
+    const violationRate = recentQuestions.length ? recentArchives / recentQuestions.length : 0;
+
+    const appealWindowStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const appealTotal = await Appeal.countDocuments({ createdAt: { $gte: appealWindowStart } });
+    const appealApproved = await Appeal.countDocuments({ createdAt: { $gte: appealWindowStart }, status: 'approved' });
+    const appealPassRate = appealTotal ? appealApproved / appealTotal : 0;
+
+    const resolvedAppeals = await Appeal.find({ status: { $in: ['approved', 'rejected'] }, createdAt: { $gte: appealWindowStart } });
+    const resolvedWithTimestamps = resolvedAppeals.filter((a) => a.updatedAt);
+    const avgHandleMs = resolvedWithTimestamps.length
+      ? resolvedWithTimestamps.reduce((sum, a) => sum + (a.updatedAt.getTime() - a.createdAt.getTime()), 0) /
+        resolvedWithTimestamps.length
+      : 0;
+
+    // 按课程聚合解决率
+    const courseAgg = await Question.aggregate([
+      {
+        $group: {
+          _id: '$category',
+          total: { $sum: 1 },
+          solved: { $sum: { $cond: [{ $ifNull: ['$acceptedAnswerId', false] }, 1, 0] } },
+          avgSolveHours: {
+            $avg: {
+              $cond: [
+                { $and: ['$solvedAt', '$createdAt'] },
+                { $divide: [{ $subtract: ['$solvedAt', '$createdAt'] }, 1000 * 60 * 60] },
+                null
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    const urgentQueue = await Question.find({ isUrgent: true, isArchived: false }).sort({ createdAt: -1 }).limit(20);
+
+    return res.status(200).json({
+      users,
+      questions,
+      answers,
+      pendingAppeals,
+      firstResponseRate,
+      violationRate,
+      appealPassRate,
+      avgHandleHours: avgHandleMs / (1000 * 60 * 60),
+      courseStats: courseAgg.map((c) => ({
+        course: c._id,
+        total: c.total,
+        solved: c.solved,
+        solveRate: c.total ? c.solved / c.total : 0,
+        avgSolveHours: c.avgSolveHours || 0
+      })),
+      urgentQueue
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
