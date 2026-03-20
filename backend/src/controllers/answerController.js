@@ -21,6 +21,7 @@ const AUTO_ACCEPT_MESSAGE = '你的回答已因点赞数达到阈值被自动设
 // 达到该点赞数后，优质回答可以帮助低信誉用户逐步恢复信誉
 const GOOD_ANSWER_LIKE_THRESHOLD = 3;
 const TRUST_RECOVERY_REWARD = 1;
+const MAX_TRUST_RECOVERY_VOTERS = 200;
 
 /**
  * Normalize an id-like value (ObjectId, string, number) into a string id.
@@ -399,11 +400,9 @@ const likeAnswer = async (req, res) => {
 
     if (qualifiesForRecovery) {
       await adjustUserTrust(userId, TRUST_RECOVERY_REWARD);
-      const updated = Array.from(
-        new Set([...(answer.trustRecoveryVoters || []).map((uid) => uid.toString()), userId.toString()])
-      );
-      // 防止无限增长，保留最新 200 个
-      answer.trustRecoveryVoters = updated.slice(-200);
+      const updated = [...(answer.trustRecoveryVoters || []), userId];
+      // 防止无限增长，保留最新 MAX_TRUST_RECOVERY_VOTERS 个
+      answer.trustRecoveryVoters = updated.slice(-MAX_TRUST_RECOVERY_VOTERS);
     }
 
     await answer.save();
