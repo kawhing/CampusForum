@@ -32,12 +32,17 @@ const normalizeAuthorId = (createdBy) => {
 
 /**
  * Extract author reputation metrics from a populated user document.
- * Accepts null/undefined and returns zeros so ownership checks still work without leaking identity.
- * Uses nullish coalescing to preserve legitimate 0 scores while defaulting missing values to 0.
+ * Accepts null/undefined and uses nullish coalescing to preserve legitimate 0 scores
+ * while defaulting missing values to 0.
  */
 const extractAuthorStats = (createdBy) => ({
   authorHelpValue: createdBy?.helpValue ?? 0,
   authorTrustScore: createdBy?.trustScore ?? 0
+});
+
+const buildAuthorMeta = (createdBy) => ({
+  authorId: normalizeAuthorId(createdBy),
+  ...extractAuthorStats(createdBy)
 });
 
 const containsBadWords = (text = '') => {
@@ -225,7 +230,7 @@ const getAnswers = async (req, res) => {
       const dislikedByMe = viewerId ? dislikedSet.has(viewerId) : false;
       const favoritedByMe = viewerId ? favoriteSet.has(a._id.toString()) : false;
       const { createdBy, ...rest } = a.toObject();
-      const authorId = normalizeAuthorId(createdBy);
+      const authorMeta = buildAuthorMeta(createdBy);
 
       return {
         ...rest,
@@ -235,8 +240,7 @@ const getAnswers = async (req, res) => {
         dislikedByMe,
         favoritedByMe,
         anonymousLabel: `${ANONYMOUS_LABEL_PREFIX} #${aliasIndex}`,
-        authorId,
-        ...extractAuthorStats(createdBy),
+        ...authorMeta,
         orderIndex: idx
       };
     });
@@ -505,11 +509,9 @@ const getComments = async (req, res) => {
 
     const normalizedComments = comments.map((c) => {
       const { createdBy, ...rest } = c.toObject();
-      const authorId = normalizeAuthorId(createdBy);
       return {
         ...rest,
-        authorId,
-        ...extractAuthorStats(createdBy)
+        ...buildAuthorMeta(createdBy)
       };
     });
 
