@@ -263,6 +263,34 @@ export default function Chat() {
     loadFriendMessages(friendId);
   };
 
+  const renderMemberAvatar = (member) => {
+    const memberUserId = member.user?._id ?? null;
+    const canAddFriend = memberUserId !== null && memberUserId !== user._id;
+    const displayName = member.nickname || member.user?.username || 'User';
+    const ariaLabel = canAddFriend ? 'Add friend' : `Room member ${displayName}`;
+    return (
+      <Avatar
+        style={canAddFriend ? { cursor: 'pointer' } : undefined}
+        tabIndex={canAddFriend ? 0 : undefined}
+        onClick={canAddFriend ? () => handleAddFriend(memberUserId) : undefined}
+        onKeyDown={
+          canAddFriend
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ' || e.key === 'Space') {
+                  e.preventDefault();
+                  handleAddFriend(memberUserId);
+                }
+              }
+            : undefined
+        }
+        aria-label={ariaLabel}
+        role={canAddFriend ? 'button' : undefined}
+      >
+        {(member.nickname?.[0] || '?').toUpperCase()}
+      </Avatar>
+    );
+  };
+
   const handleSendFriendMessage = async () => {
     if (!selectedFriendId || !friendMessageInput.trim()) return;
     setFriendSending(true);
@@ -390,7 +418,7 @@ export default function Chat() {
                           loading={messageLoading}
                           rowKey="_id"
                           dataSource={messages}
-                          style={{ maxHeight: 320, overflowY: 'auto' }}
+                          style={{ maxHeight: 480, minHeight: 320, overflowY: 'auto' }}
                           locale={{ emptyText: '还没有人发言' }}
                           renderItem={(item) => (
                             <List.Item>
@@ -465,11 +493,7 @@ export default function Chat() {
                             }
                           >
                             <List.Item.Meta
-                              avatar={
-                                <Avatar>
-                                  {(member.nickname?.[0] || '?').toUpperCase()}
-                                </Avatar>
-                              }
+                              avatar={renderMemberAvatar(member)}
                               title={
                                 <Space>
                                   <Text strong>{member.nickname}</Text>
@@ -560,17 +584,17 @@ export default function Chat() {
                     }
                   >
                     {selectedFriendId ? (
-                      <>
-                        <List
-                          rowKey="_id"
-                          loading={friendLoading}
-                          dataSource={friendMessages}
-                          style={{ maxHeight: 320, overflowY: 'auto' }}
+                        <>
+                          <List
+                            rowKey="_id"
+                            loading={friendLoading}
+                            dataSource={friendMessages}
+                          style={{ maxHeight: 480, minHeight: 320, overflowY: 'auto' }}
                           locale={{ emptyText: '暂时没有聊天记录' }}
-                          renderItem={(item) => (
-                            <List.Item>
-                              <List.Item.Meta
-                                title={
+                            renderItem={(item) => (
+                              <List.Item>
+                                <List.Item.Meta
+                                  title={
                                   <Space>
                                     <Text strong>{item.from?.username || '用户'}</Text>
                                     <Badge status={item.from?._id === user._id ? 'processing' : 'default'} />
