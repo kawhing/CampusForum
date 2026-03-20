@@ -203,7 +203,8 @@ const getAnswers = async (req, res) => {
       const dislikedByMe = viewerId ? dislikedSet.has(viewerId) : false;
       const favoritedByMe = viewerId ? favoriteSet.has(a._id.toString()) : false;
       const { createdBy, ...rest } = a.toObject();
-      const authorId = createdBy?._id || createdBy?.id || createdBy;
+      const rawAuthorId = createdBy?._id || createdBy?.id || createdBy;
+      const authorId = rawAuthorId?.toString ? rawAuthorId.toString() : rawAuthorId;
 
       return {
         ...rest,
@@ -484,9 +485,13 @@ const getComments = async (req, res) => {
 
     const shaped = comments.map((c) => {
       const { createdBy, ...rest } = c.toObject();
+      const rawAuthorId = createdBy?._id || createdBy?.id || createdBy;
+      const authorId = rawAuthorId?.toString ? rawAuthorId.toString() : rawAuthorId;
       return {
         ...rest,
-        authorId: createdBy?._id || createdBy?.id || createdBy
+        authorId,
+        authorHelpValue: createdBy?.helpValue || 0,
+        authorTrustScore: createdBy?.trustScore || 0
       };
     });
 
