@@ -388,8 +388,8 @@ const likeAnswer = async (req, res) => {
       trustDelta += voteWeight;
     }
 
-    const recoverySet = new Set((answer.trustRecoveryVoters || []).map((uid) => uid.toString()));
-    const recoveryAlreadyGranted = recoverySet.has(userId.toString());
+    const recoveryList = answer.trustRecoveryVoters || [];
+    const recoveryAlreadyGranted = recoveryList.some((uid) => uid.toString() === userId.toString());
     const qualifiesForRecovery =
       isNewLike &&
       voterTrust < TRUST_BLOCK_THRESHOLD &&
@@ -400,9 +400,13 @@ const likeAnswer = async (req, res) => {
 
     if (qualifiesForRecovery) {
       await adjustUserTrust(userId, TRUST_RECOVERY_REWARD);
-      const updated = [...(answer.trustRecoveryVoters || []), userId];
-      // 防止无限增长，保留最新 MAX_TRUST_RECOVERY_VOTERS 个
-      answer.trustRecoveryVoters = updated.slice(-MAX_TRUST_RECOVERY_VOTERS);
+      const updated = [...recoveryList, userId];
+      if (updated.length > MAX_TRUST_RECOVERY_VOTERS) {
+        // 防止无限增长，保留最新 MAX_TRUST_RECOVERY_VOTERS 个
+        answer.trustRecoveryVoters = updated.slice(-MAX_TRUST_RECOVERY_VOTERS);
+      } else {
+        answer.trustRecoveryVoters = updated;
+      }
     }
 
     await answer.save();
