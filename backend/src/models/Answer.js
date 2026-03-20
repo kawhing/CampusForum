@@ -12,7 +12,9 @@ const AnswerSchema = new mongoose.Schema({
   isPinned: { type: Boolean, default: false },
   isDeleted: { type: Boolean, default: false },
   isHidden: { type: Boolean, default: false },
-  commentCount: { type: Number, default: 0 }
+  commentCount: { type: Number, default: 0 },
+  // 记录因点赞优质回答而获得信誉恢复的用户，避免重复刷分
+  trustRecoveryVoters: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
 
 module.exports = mongoose.model('Answer', AnswerSchema);

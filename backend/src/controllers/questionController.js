@@ -3,9 +3,25 @@ const Question = require('../models/Question');
 const Answer = require('../models/Answer');
 const Comment = require('../models/Comment');
 const User = require('../models/User');
+const { containsBadWords, OFFENSIVE_CONTENT_PENALTY, adjustUserTrust } = require('../utils/moderation');
 
 const VIEWED_BY_LIMIT = 5000;
-const RISK_KEYWORDS = ['自杀', '自残', '抑郁', '想死', '伤害自己', '暴力', '杀', '攻击'];
+const RISK_KEYWORDS = [
+  '自杀',
+  '自残',
+  '抑郁',
+  '想死',
+  '伤害自己',
+  '暴力',
+  '杀',
+  '攻击',
+  '跳楼',
+  '绝望',
+  '结束生命',
+  '不想活了',
+  '割腕',
+  '上吊'
+];
 const MIN_TRUST_FOR_COOLDOWN = 20;
 const LOW_TRUST_COOLDOWN_MINUTES = 10;
 const HOURLY_QUESTION_LIMIT = 3;
@@ -45,8 +61,16 @@ const createQuestion = async (req, res) => {
       }
     }
 
+    const combinedRawText = `${title} ${content}`;
+    if (containsBadWords(combinedRawText)) {
+      await adjustUserTrust(req.user._id, -OFFENSIVE_CONTENT_PENALTY);
+      return res
+        .status(400)
+        .json({ message: '内容包含不当用语，已扣除信誉分并阻止发布，请文明提问。' });
+    }
+
     // 风险内容识别
-    const combinedText = `${title} ${content}`.toLowerCase();
+    const combinedText = combinedRawText.toLowerCase();
     const matchedRisk = RISK_KEYWORDS.find((kw) => combinedText.includes(kw.toLowerCase()));
     const isUrgent = Boolean(matchedRisk);
 

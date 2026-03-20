@@ -19,6 +19,7 @@ import {
   SettingOutlined,
   MenuOutlined,
   MessageOutlined,
+  HeartTwoTone,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -101,6 +102,7 @@ export default function AppLayout() {
     if (location.pathname === '/') return 'home';
     if (location.pathname.startsWith('/ask')) return 'ask';
     if (location.pathname.startsWith('/chat')) return 'chat';
+    if (location.pathname.startsWith('/support')) return 'support';
     if (location.pathname.startsWith('/profile')) return 'profile';
     if (location.pathname.startsWith('/admin')) return 'admin';
     return 'home';
@@ -119,6 +121,12 @@ export default function AppLayout() {
       icon: <MessageOutlined />,
       label: '聊天室',
       onClick: () => navigate('/chat'),
+    },
+    {
+      key: 'support',
+      icon: <HeartTwoTone twoToneColor="#eb2f96" />,
+      label: '心理援助',
+      onClick: () => navigate('/support'),
     },
     ...(user
       ? [
@@ -217,6 +225,7 @@ export default function AppLayout() {
                 { key: 'home', label: '首页', onClick: () => navigate('/') },
                 { key: 'ask', label: '提问', onClick: () => navigate('/ask') },
                 { key: 'chat', label: '聊天室', onClick: () => navigate('/chat') },
+                { key: 'support', label: '心理援助', onClick: () => navigate('/support') },
               ]}
             />
           )}
