@@ -81,7 +81,7 @@ start.bat
 | `mongodb://localhost:27017` | MongoDB（仅本地调试用） |
 
 > 首次启动需要拉取镜像和构建，约需 2–5 分钟，请耐心等待。
-
+>
 ---
 
 ### 方式二：手动 Docker Compose

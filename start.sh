@@ -58,4 +58,3 @@ echo "  停止应用：${YELLOW}${DC} down${NC}"
 echo "  重启应用：${YELLOW}${DC} restart${NC}"
 echo ""
 echo -e "${GREEN}========================================${NC}"
-
