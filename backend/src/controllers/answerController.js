@@ -32,7 +32,8 @@ const normalizeAuthorId = (createdBy) => {
 
 /**
  * Extract author reputation metrics from a populated user document.
- * Falls back to zero to avoid losing explicit 0 values.
+ * Accepts null/undefined and returns zeros so ownership checks still work without leaking identity.
+ * Uses nullish coalescing to preserve legitimate 0 scores while defaulting missing values to 0.
  */
 const extractAuthorStats = (createdBy) => ({
   authorHelpValue: createdBy?.helpValue ?? 0,
