@@ -22,7 +22,8 @@ const AUTO_ACCEPT_MESSAGE = '你的回答已因点赞数达到阈值被自动设
 const normalizeAuthorId = (createdBy) => {
   const rawAuthorId = createdBy?._id || createdBy?.id || createdBy;
   if (!rawAuthorId) return null;
-  return typeof rawAuthorId.toString === 'function' ? rawAuthorId.toString() : rawAuthorId;
+  if (typeof rawAuthorId.toString === 'function') return rawAuthorId.toString();
+  return String(rawAuthorId);
 };
 
 const extractAuthorStats = (createdBy) => ({
@@ -194,6 +195,7 @@ const getAnswers = async (req, res) => {
 
     const answers = await Answer.find({ questionId, isDeleted: false, isHidden: false })
       .sort(sortOption)
+      // Intentionally omit username to preserve anonymity in the response payload
       .populate('createdBy', 'helpValue trustScore');
 
     const viewerId = req.user?._id?.toString();
