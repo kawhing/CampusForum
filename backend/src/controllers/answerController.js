@@ -19,6 +19,10 @@ const MIN_VOTE_WEIGHT = 1;
 const AUTO_ACCEPT_LIKE_THRESHOLD = 10;
 const AUTO_ACCEPT_MESSAGE = '你的回答已因点赞数达到阈值被自动设为最佳答案';
 
+/**
+ * Normalize a createdBy reference (ObjectId or populated user) into a string id.
+ * Returns null when no author exists to keep downstream comparisons predictable.
+ */
 const normalizeAuthorId = (createdBy) => {
   const rawAuthorId = createdBy?._id || createdBy?.id || createdBy;
   if (!rawAuthorId) return null;
@@ -26,6 +30,10 @@ const normalizeAuthorId = (createdBy) => {
   return String(rawAuthorId);
 };
 
+/**
+ * Extract author reputation metrics from a populated user document.
+ * Falls back to zero to avoid losing explicit 0 values.
+ */
 const extractAuthorStats = (createdBy) => ({
   authorHelpValue: createdBy?.helpValue ?? 0,
   authorTrustScore: createdBy?.trustScore ?? 0
