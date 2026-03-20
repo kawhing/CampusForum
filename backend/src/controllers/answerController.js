@@ -12,6 +12,7 @@ const LOW_TRUST_ANSWER_COOLDOWN_MINUTES = 24 * MINUTES_PER_HOUR; // 1 day
 const VERY_LOW_TRUST_COOLDOWN_MINUTES = 48 * MINUTES_PER_HOUR; // 2 days
 const LOW_TRUST_THRESHOLD = 60;
 const VERY_LOW_TRUST_THRESHOLD = 50;
+// Minimum trust required to publish answers or comments
 const TRUST_BLOCK_THRESHOLD = 40;
 const ANONYMOUS_LABEL_PREFIX = '匿名回答者';
 const VOTE_TRUST_WEIGHT_DIVISOR = 20;
@@ -511,6 +512,18 @@ const createComment = async (req, res) => {
     const answer = await Answer.findById(id);
     if (!answer || answer.isDeleted) {
       return res.status(404).json({ message: 'Answer not found' });
+    }
+
+    const commenterTrust = Number(req.user.trustScore);
+    if (!Number.isFinite(commenterTrust)) {
+      return res
+        .status(500)
+        .json({ message: '用户信任分数不可用（缺失或异常），请联系管理员' });
+    }
+    if (commenterTrust < TRUST_BLOCK_THRESHOLD) {
+      return res.status(403).json({
+        message: `信任分数低于${TRUST_BLOCK_THRESHOLD}，暂时无法发表评论。请先浏览并点赞优质回答以逐步提升信任分数。`
+      });
     }
 
     if (containsBadWords(content)) {
