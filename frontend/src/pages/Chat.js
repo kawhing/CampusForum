@@ -266,7 +266,7 @@ export default function Chat() {
   const renderMemberAvatar = (member) => {
     const memberUserId = member.user?._id ?? null;
     const canAddFriend = memberUserId !== null && memberUserId !== user._id;
-    const ariaLabel = canAddFriend ? '点击头像加好友' : `房间成员 ${member.nickname || '用户'}`;
+    const ariaLabel = canAddFriend ? 'Add friend' : `Room member ${member.nickname || 'User'}`;
     return (
       <Avatar
         style={canAddFriend ? { cursor: 'pointer' } : undefined}
