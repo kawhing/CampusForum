@@ -28,6 +28,34 @@ const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 const { useBreakpoint } = Grid;
 
+const BRAND_PRIMARY_DARK = '#0b1533';
+const BRAND_SECONDARY_DARK = '#0c213f';
+const BRAND_ACCENT_DARK = '#123a63';
+const BRAND_NAVY = '#0f3f7a';
+const APP_LAYOUT_GRADIENT = `linear-gradient(135deg, ${BRAND_PRIMARY_DARK} 0%, ${BRAND_SECONDARY_DARK} 40%, ${BRAND_ACCENT_DARK} 100%)`;
+const HEADER_GRADIENT = `linear-gradient(120deg, ${BRAND_PRIMARY_DARK} 0%, ${BRAND_NAVY} 45%, ${BRAND_PRIMARY_DARK} 100%)`;
+const CONTENT_GRADIENT = 'linear-gradient(145deg, #ffffff 0%, #f5f7fb 100%)';
+const HEADER_SHADOW = '0 12px 40px rgba(0, 0, 0, 0.35)';
+const PANEL_SHADOW = '0 18px 48px rgba(15, 23, 42, 0.12)';
+const CONTENT_SHADOW = '0 24px 60px rgba(15, 23, 42, 0.14)';
+const GLASS_PANEL_STYLE = {
+  background: '#ffffff',
+  border: '1px solid #e5e7eb',
+  boxShadow: PANEL_SHADOW,
+};
+// Header keeps tighter horizontal padding than content to keep navigation compact.
+const HEADER_PADDING_MOBILE = '0 16px';
+const HEADER_PADDING_DESKTOP = '0 32px';
+// Font sizes are pixel values chosen to keep the masthead readable on all devices.
+const TITLE_FONT_SIZE_MOBILE = '16px';
+const TITLE_FONT_SIZE_DESKTOP = '18px';
+const OUTER_LAYOUT_PADDING_MOBILE = '16px';
+const OUTER_LAYOUT_PADDING_DESKTOP = '32px 40px';
+const PANEL_BORDER_RADIUS = '16px';
+// Content uses slightly softer padding to give cards breathing room on all devices.
+const CONTENT_PADDING_MOBILE = '20px';
+const CONTENT_PADDING_DESKTOP = '28px';
+
 export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -136,7 +164,7 @@ export default function AppLayout() {
   const isMobile = !screens.md;
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh', background: APP_LAYOUT_GRADIENT }}>
       <Header
         style={{
           position: 'sticky',
@@ -145,8 +173,10 @@ export default function AppLayout() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 24px',
-          background: '#001529',
+          padding: isMobile ? HEADER_PADDING_MOBILE : HEADER_PADDING_DESKTOP,
+          background: HEADER_GRADIENT,
+          boxShadow: HEADER_SHADOW,
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
         }}
       >
         <Space size="large">
@@ -160,7 +190,11 @@ export default function AppLayout() {
           <Link to="/" style={{ textDecoration: 'none' }}>
             <Text
               strong
-              style={{ color: '#fff', fontSize: 18, cursor: 'pointer' }}
+              style={{
+                color: '#f8fafc',
+                fontSize: isMobile ? TITLE_FONT_SIZE_MOBILE : TITLE_FONT_SIZE_DESKTOP,
+                cursor: 'pointer',
+              }}
             >
               匿名问答平台
             </Text>
@@ -222,7 +256,11 @@ export default function AppLayout() {
             collapsible
             collapsed={siderCollapsed}
             onCollapse={setSiderCollapsed}
-            style={{ background: '#fff', borderRight: '1px solid #f0f0f0' }}
+            style={{
+              ...GLASS_PANEL_STYLE,
+              borderRadius: PANEL_BORDER_RADIUS,
+              overflow: 'hidden',
+            }}
           >
             <Menu
               mode="inline"
@@ -237,8 +275,9 @@ export default function AppLayout() {
           <Sider
             width={200}
             style={{
-              background: '#fff',
-              borderRight: '1px solid #f0f0f0',
+              ...GLASS_PANEL_STYLE,
+              borderRadius: PANEL_BORDER_RADIUS,
+              overflow: 'hidden',
               position: 'fixed',
               left: 0,
               top: 64,
@@ -256,14 +295,18 @@ export default function AppLayout() {
           </Sider>
         )}
 
-        <Layout style={{ padding: '24px' }}>
+        <Layout
+          style={{ padding: isMobile ? OUTER_LAYOUT_PADDING_MOBILE : OUTER_LAYOUT_PADDING_DESKTOP }}
+        >
           <Content
             style={{
-              background: '#fff',
-              padding: 24,
+              background: CONTENT_GRADIENT,
+              padding: isMobile ? CONTENT_PADDING_MOBILE : CONTENT_PADDING_DESKTOP,
               margin: 0,
               minHeight: 280,
-              borderRadius: 8,
+              borderRadius: PANEL_BORDER_RADIUS,
+              boxShadow: CONTENT_SHADOW,
+              border: '1px solid #e5e7eb',
             }}
           >
             <Outlet />
