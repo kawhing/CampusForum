@@ -19,6 +19,38 @@ const MIN_VOTE_WEIGHT = 1;
 const AUTO_ACCEPT_LIKE_THRESHOLD = 10;
 const AUTO_ACCEPT_MESSAGE = '你的回答已因点赞数达到阈值被自动设为最佳答案';
 
+/**
+ * Normalize an id-like value (ObjectId, string, number) into a string id.
+ * Returns null when no identifier exists to keep downstream comparisons predictable.
+ */
+const normalizeId = (id) => {
+  if (!id) return null;
+  return String(id);
+};
+
+const normalizeAuthorId = (createdBy) => {
+  const rawAuthorId = createdBy?._id || createdBy?.id || createdBy;
+  return normalizeId(rawAuthorId);
+};
+
+/**
+ * Extract author reputation metrics from a populated user document.
+ * Returns author reputation metrics with safe defaults for missing values,
+ * matching the schema defaults (0) to avoid exposing whether the metric was missing.
+ */
+const extractAuthorStats = (createdBy) => ({
+  authorHelpValue: createdBy?.helpValue ?? 0,
+  authorTrustScore: createdBy?.trustScore ?? 0
+});
+
+/**
+ * Build a minimal author metadata object containing normalized id and reputation stats.
+ */
+const buildAuthorMeta = (createdBy) => ({
+  authorId: normalizeAuthorId(createdBy),
+  ...extractAuthorStats(createdBy)
+});
+
 const containsBadWords = (text = '') => {
   const lower = text.toLowerCase();
   return BAD_WORDS.some((w) => lower.includes(w));
@@ -183,7 +215,8 @@ const getAnswers = async (req, res) => {
 
     const answers = await Answer.find({ questionId, isDeleted: false, isHidden: false })
       .sort(sortOption)
-      .populate('createdBy', 'username helpValue trustScore');
+      // Intentionally omit username to preserve anonymity in the response payload
+      .populate('createdBy', 'helpValue trustScore');
 
     const viewerId = req.user?._id?.toString();
     let favoriteSet = new Set();
@@ -202,18 +235,36 @@ const getAnswers = async (req, res) => {
       const likedByMe = viewerId ? likedSet.has(viewerId) : false;
       const dislikedByMe = viewerId ? dislikedSet.has(viewerId) : false;
       const favoritedByMe = viewerId ? favoriteSet.has(a._id.toString()) : false;
+      const { createdBy, ...rest } = a.toObject();
+      // Whitelist public fields to avoid leaking identity or internal metadata.
+      // Update intentionally if new public-facing fields are added to the schema.
+      const publicAnswer = {
+        // Keep both _id and id for backward compatibility with existing clients
+        _id: rest._id,
+        id: normalizeId(rest._id),
+        content: rest.content,
+        questionId: rest.questionId,
+        createdAt: rest.createdAt,
+        likes: rest.likes,
+        dislikes: rest.dislikes,
+        isPinned: rest.isPinned,
+        // keep both keys for backward compatibility with existing clients
+        pinned: rest.isPinned,
+        isDeleted: rest.isDeleted,
+        isHidden: rest.isHidden,
+        commentCount: rest.commentCount
+      };
+      const authorMeta = buildAuthorMeta(createdBy);
 
       return {
-        ...a.toObject(),
+        ...publicAnswer,
         likeCount: a.likes,
         dislikeCount: a.dislikes,
         likedByMe,
         dislikedByMe,
         favoritedByMe,
         anonymousLabel: `${ANONYMOUS_LABEL_PREFIX} #${aliasIndex}`,
-        authorId: a.createdBy?._id,
-        authorHelpValue: a.createdBy?.helpValue || 0,
-        authorTrustScore: a.createdBy?.trustScore || 0,
+        ...authorMeta,
         orderIndex: idx
       };
     });
@@ -478,9 +529,28 @@ const getComments = async (req, res) => {
 
     const comments = await Comment.find({ answerId: id, isDeleted: false })
       .sort({ createdAt: 1 })
-      .populate('createdBy', 'username');
+      .populate('createdBy', 'helpValue trustScore');
 
-    return res.status(200).json({ comments });
+    const normalizedComments = comments.map((c) => {
+      const { createdBy, ...rest } = c.toObject();
+      // Whitelist public fields to avoid leaking identity or internal metadata.
+      // Update intentionally if new public-facing fields are added to the schema.
+      const publicComment = {
+        // Keep both _id and id for backward compatibility with existing clients
+        _id: rest._id,
+        id: normalizeId(rest._id),
+        content: rest.content,
+        answerId: rest.answerId,
+        createdAt: rest.createdAt,
+        isDeleted: rest.isDeleted
+      };
+      return {
+        ...publicComment,
+        ...buildAuthorMeta(createdBy)
+      };
+    });
+
+    return res.status(200).json({ comments: normalizedComments });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
