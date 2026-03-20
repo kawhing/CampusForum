@@ -53,6 +53,7 @@ import {
   deleteComment,
 } from '../api';
 import { ensureSupportPrompt } from '../utils/supportPrompt';
+import { getAuthorDisplayName } from '../utils/questionOwner';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -552,9 +553,7 @@ export default function QuestionDetail() {
             <Space size={4}>
               <UserOutlined />
               <Text type="secondary">
-                {currentQuestion.authorName ||
-                  currentQuestion.author?.username ||
-                  '匿名用户'}
+                {getAuthorDisplayName(currentQuestion, currentUser, '匿名用户')}
               </Text>
             </Space>
             <Space size={4}>
