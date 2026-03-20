@@ -23,11 +23,15 @@ const AUTO_ACCEPT_MESSAGE = '你的回答已因点赞数达到阈值被自动设
  * Normalize a createdBy reference (ObjectId or populated user) into a string id.
  * Returns null when no author exists to keep downstream comparisons predictable.
  */
+const normalizeId = (id) => {
+  if (!id) return null;
+  if (typeof id.toString === 'function') return id.toString();
+  return String(id);
+};
+
 const normalizeAuthorId = (createdBy) => {
   const rawAuthorId = createdBy?._id || createdBy?.id || createdBy;
-  if (!rawAuthorId) return null;
-  if (typeof rawAuthorId.toString === 'function') return rawAuthorId.toString();
-  return String(rawAuthorId);
+  return normalizeId(rawAuthorId);
 };
 
 /**
@@ -231,7 +235,7 @@ const getAnswers = async (req, res) => {
       const { createdBy, ...rest } = a.toObject();
       const publicAnswer = {
         _id: rest._id,
-        id: rest._id?.toString ? rest._id.toString() : rest._id,
+        id: normalizeId(rest._id),
         content: rest.content,
         questionId: rest.questionId,
         createdAt: rest.createdAt,
@@ -240,6 +244,7 @@ const getAnswers = async (req, res) => {
         likedBy: rest.likedBy,
         dislikedBy: rest.dislikedBy,
         isPinned: rest.isPinned,
+        // keep both keys for backward compatibility with existing clients
         pinned: rest.isPinned,
         isDeleted: rest.isDeleted,
         isHidden: rest.isHidden,
@@ -526,7 +531,7 @@ const getComments = async (req, res) => {
       const { createdBy, ...rest } = c.toObject();
       const publicComment = {
         _id: rest._id,
-        id: rest._id?.toString ? rest._id.toString() : rest._id,
+        id: normalizeId(rest._id),
         content: rest.content,
         answerId: rest.answerId,
         createdAt: rest.createdAt,
