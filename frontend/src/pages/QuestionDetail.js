@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Card,
   Typography,
   Tag,
   Space,
   Button,
-  List,
   Input,
   Select,
   Divider,
@@ -70,6 +69,42 @@ function CommentSection({ answerId, currentUser }) {
   const [loading, setLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [replyTarget, setReplyTarget] = useState(null);
+
+  const viewerId = currentUser?.id || currentUser?._id;
+
+  const getCommentDisplayName = useCallback(
+    (comment) => {
+      const authorId = comment?.authorId || comment?.author?.id || comment?.author?._id;
+      if (viewerId && authorId && viewerId.toString() === authorId.toString()) {
+        return '我';
+      }
+      return '匿名评论者';
+    },
+    [viewerId]
+  );
+
+  const { commentTree, commentMap } = useMemo(() => {
+    const map = new Map();
+    const roots = [];
+    comments.forEach((comment) => {
+      const id = comment.id || comment._id;
+      if (!id) return;
+      map.set(id.toString(), { ...comment, replies: [] });
+    });
+    comments.forEach((comment) => {
+      const id = comment.id || comment._id;
+      if (!id) return;
+      const parentId = comment.parentCommentId;
+      const node = map.get(id.toString());
+      if (parentId && map.has(parentId.toString())) {
+        map.get(parentId.toString()).replies.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+    return { commentTree: roots, commentMap: map };
+  }, [comments]);
 
   const loadComments = useCallback(() => {
     setLoading(true);
@@ -89,8 +124,13 @@ function CommentSection({ answerId, currentUser }) {
     if (!allowSubmit) return;
     setSubmitting(true);
     try {
-      await createComment(answerId, { content: newComment });
+      const payload = { content: newComment };
+      if (replyTarget?.id || replyTarget?._id) {
+        payload.parentCommentId = replyTarget.id || replyTarget._id;
+      }
+      await createComment(answerId, payload);
       setNewComment('');
+      setReplyTarget(null);
       message.success('评论已发布');
       loadComments();
     } catch (err) {
@@ -110,65 +150,108 @@ function CommentSection({ answerId, currentUser }) {
     }
   };
 
+  const renderComment = (comment, depth = 0) => {
+    const authorId = comment.authorId || comment.author?.id || comment.author?._id;
+    const isOwner = viewerId && authorId && viewerId.toString() === authorId.toString();
+    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
+    const parentComment = comment.parentCommentId
+      ? commentMap.get(comment.parentCommentId.toString())
+      : null;
+    const parentName = parentComment ? getCommentDisplayName(parentComment) : null;
+
+    return (
+      <div
+        key={comment.id || comment._id}
+        style={{
+          marginTop: depth === 0 ? 8 : 12,
+          marginLeft: depth * 24,
+          paddingLeft: depth ? 12 : 0,
+          borderLeft: depth ? '1px solid #f0f0f0' : undefined,
+        }}
+      >
+        <Space align="start">
+          <Avatar size="small" icon={<UserOutlined />} />
+          <div style={{ width: '100%' }}>
+            <Space size="small" wrap>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {getCommentDisplayName(comment)}
+              </Text>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                信誉 {comment.authorTrustScore ?? 0}
+              </Text>
+              {parentName && (
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  回复 {parentName}
+                </Text>
+              )}
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {comment.createdAt
+                  ? new Date(comment.createdAt).toLocaleDateString('zh-CN')
+                  : ''}
+              </Text>
+            </Space>
+            <div>
+              <Text style={{ fontSize: 13 }}>{comment.content}</Text>
+            </div>
+            <Space size="small" style={{ marginTop: 4 }}>
+              {currentUser && (
+                <Button type="link" size="small" onClick={() => setReplyTarget(comment)}>
+                  回复
+                </Button>
+              )}
+              {(isOwner || isAdmin) && (
+                <Button
+                  type="link"
+                  size="small"
+                  danger
+                  onClick={() => handleDeleteComment(comment.id || comment._id)}
+                >
+                  删除
+                </Button>
+              )}
+            </Space>
+          </div>
+        </Space>
+        {(comment.replies || []).map((reply) => renderComment(reply, depth + 1))}
+      </div>
+    );
+  };
+
   return (
     <div style={{ marginTop: 8 }}>
       <Spin spinning={loading}>
-        {comments.length === 0 ? (
+        {commentTree.length === 0 ? (
           <Text type="secondary">暂无评论</Text>
         ) : (
-          <List
-            size="small"
-            dataSource={comments}
-            renderItem={(c) => (
-              <List.Item
-                key={c.id || c._id}
-                actions={
-                  currentUser &&
-                  (currentUser.id === (c.authorId || c.author?.id) ||
-                    currentUser.role === 'admin')
-                    ? [
-                        <Button
-                          type="text"
-                          size="small"
-                          danger
-                          icon={<DeleteOutlined />}
-                          onClick={() => handleDeleteComment(c.id || c._id)}
-                        />,
-                      ]
-                    : []
-                }
-              >
-                <Space>
-                  <Avatar size="small" icon={<UserOutlined />} />
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {c.authorName || c.author?.username || '匿名'}:
-                  </Text>
-                  <Text style={{ fontSize: 13 }}>{c.content}</Text>
-                  <Text type="secondary" style={{ fontSize: 11 }}>
-                    {c.createdAt
-                      ? new Date(c.createdAt).toLocaleDateString('zh-CN')
-                      : ''}
-                  </Text>
-                </Space>
-              </List.Item>
-            )}
-          />
+          <div>{commentTree.map((comment) => renderComment(comment))}</div>
         )}
       </Spin>
 
       {currentUser && (
-        <Space.Compact style={{ width: '100%', marginTop: 8 }}>
-          <Input
-            placeholder="写下你的评论..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            onPressEnter={handleAddComment}
-            maxLength={200}
-          />
-          <Button type="primary" loading={submitting} onClick={handleAddComment}>
-            发布
-          </Button>
-        </Space.Compact>
+        <div style={{ marginTop: 8 }}>
+          {replyTarget && (
+            <Space size="small" style={{ marginBottom: 6 }}>
+              <Text type="secondary">
+                正在回复 {getCommentDisplayName(replyTarget)}
+              </Text>
+              <Button type="link" size="small" onClick={() => setReplyTarget(null)}>
+                取消
+              </Button>
+            </Space>
+          )}
+          <Space.Compact style={{ width: '100%' }}>
+            <Input
+              placeholder={replyTarget ? '写下你的回复...' : '写下你的评论...'}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onPressEnter={handleAddComment}
+              maxLength={200}
+            />
+            <Button type="primary" loading={submitting} onClick={handleAddComment}>
+              发布
+            </Button>
+          </Space.Compact>
+        </div>
       )}
     </div>
   );
@@ -193,6 +276,7 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId, accepted
   const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator');
   const canAccept = currentUser && (currentUser.id === questionAuthorId || currentUser._id === questionAuthorId || isAdmin);
   const isAccepted = acceptedAnswerId && (acceptedAnswerId === answerId || acceptedAnswerId === answer._id?.toString());
+  const displayName = isOwner ? '我的回答' : answer.anonymousLabel || '匿名回答者';
 
   const handleLike = async () => {
     if (!currentUser) return message.warning('请先登录');
@@ -296,7 +380,10 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId, accepted
           <Space size="small">
             <Avatar size="small" icon={<UserOutlined />} />
             <Text strong>
-              {answer.anonymousLabel || '匿名回答者'}
+              {displayName}
+            </Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              信誉 {answer.authorTrustScore ?? 0}
             </Text>
             <Text type="secondary" style={{ fontSize: 12 }}>
               <ClockCircleOutlined />{' '}
