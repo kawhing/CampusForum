@@ -20,12 +20,11 @@ const AUTO_ACCEPT_LIKE_THRESHOLD = 10;
 const AUTO_ACCEPT_MESSAGE = '你的回答已因点赞数达到阈值被自动设为最佳答案';
 
 /**
- * Normalize a createdBy reference (ObjectId or populated user) into a string id.
- * Returns null when no author exists to keep downstream comparisons predictable.
+ * Normalize an id-like value (ObjectId, string, number) into a string id.
+ * Returns null when no identifier exists to keep downstream comparisons predictable.
  */
 const normalizeId = (id) => {
   if (!id) return null;
-  if (typeof id.toString === 'function') return id.toString();
   return String(id);
 };
 
@@ -43,6 +42,9 @@ const extractAuthorStats = (createdBy) => ({
   authorTrustScore: createdBy?.trustScore ?? 0
 });
 
+/**
+ * Build a minimal author metadata object containing normalized id and reputation stats.
+ */
 const buildAuthorMeta = (createdBy) => ({
   authorId: normalizeAuthorId(createdBy),
   ...extractAuthorStats(createdBy)
