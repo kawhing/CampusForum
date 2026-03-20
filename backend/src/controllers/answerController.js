@@ -35,7 +35,8 @@ const normalizeAuthorId = (createdBy) => {
 
 /**
  * Extract author reputation metrics from a populated user document.
- * Returns author reputation metrics with safe defaults for missing values.
+ * Returns author reputation metrics with safe defaults for missing values,
+ * matching the schema defaults (0) to avoid exposing whether the metric was missing.
  */
 const extractAuthorStats = (createdBy) => ({
   authorHelpValue: createdBy?.helpValue ?? 0,
@@ -235,6 +236,8 @@ const getAnswers = async (req, res) => {
       const dislikedByMe = viewerId ? dislikedSet.has(viewerId) : false;
       const favoritedByMe = viewerId ? favoriteSet.has(a._id.toString()) : false;
       const { createdBy, ...rest } = a.toObject();
+      // Whitelist public fields to avoid leaking identity or internal metadata.
+      // Update intentionally if new public-facing fields are added to the schema.
       const publicAnswer = {
         // Keep both _id and id for backward compatibility with existing clients
         _id: rest._id,
@@ -244,8 +247,6 @@ const getAnswers = async (req, res) => {
         createdAt: rest.createdAt,
         likes: rest.likes,
         dislikes: rest.dislikes,
-        likedBy: rest.likedBy,
-        dislikedBy: rest.dislikedBy,
         isPinned: rest.isPinned,
         // keep both keys for backward compatibility with existing clients
         pinned: rest.isPinned,
@@ -532,6 +533,8 @@ const getComments = async (req, res) => {
 
     const normalizedComments = comments.map((c) => {
       const { createdBy, ...rest } = c.toObject();
+      // Whitelist public fields to avoid leaking identity or internal metadata.
+      // Update intentionally if new public-facing fields are added to the schema.
       const publicComment = {
         // Keep both _id and id for backward compatibility with existing clients
         _id: rest._id,
