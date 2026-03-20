@@ -66,6 +66,7 @@ export const updateAnswer = (id, data) => api.put(`/answers/${id}`, data);
 export const deleteAnswer = (id) => api.delete(`/answers/${id}`);
 export const likeAnswer = (id) => api.post(`/answers/${id}/like`);
 export const dislikeAnswer = (id) => api.post(`/answers/${id}/dislike`);
+export const acceptAnswer = (id) => api.post(`/answers/${id}/accept`);
 export const favoriteAnswer = (id) => api.post(`/answers/${id}/favorite`);
 export const getComments = (answerId) => api.get(`/answers/${answerId}/comments`);
 export const createComment = (answerId, data) =>

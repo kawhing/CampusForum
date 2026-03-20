@@ -2,7 +2,7 @@ const express = require('express');
 const {
   createAnswer, getAnswers, updateAnswer, deleteAnswer,
   likeAnswer, dislikeAnswer, createComment, getComments,
-  deleteComment, toggleFavorite
+  deleteComment, toggleFavorite, acceptAnswer
 } = require('../controllers/answerController');
 const { authenticate, optionalAuth } = require('../middleware/auth');
 
@@ -17,6 +17,7 @@ answerRouter.put('/answers/:id', authenticate, updateAnswer);
 answerRouter.delete('/answers/:id', authenticate, deleteAnswer);
 answerRouter.post('/answers/:id/like', authenticate, likeAnswer);
 answerRouter.post('/answers/:id/dislike', authenticate, dislikeAnswer);
+answerRouter.post('/answers/:id/accept', authenticate, acceptAnswer);
 answerRouter.get('/answers/:id/comments', getComments);
 answerRouter.post('/answers/:id/comments', authenticate, createComment);
 answerRouter.delete('/comments/:id', authenticate, deleteComment);

@@ -4,6 +4,7 @@ const Question = require('../models/Question');
 const Comment = require('../models/Comment');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const Question = require('../models/Question');
 
 const createAnswer = async (req, res) => {
   try {
@@ -52,18 +53,64 @@ const createAnswer = async (req, res) => {
   }
 };
 
+const acceptAnswer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid answer ID' });
+    }
+    const answer = await Answer.findById(id).populate('createdBy', 'username');
+    if (!answer || answer.isDeleted) {
+      return res.status(404).json({ message: 'Answer not found' });
+    }
+    const question = await Question.findById(answer.questionId);
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found for this answer' });
+    }
+    const isOwner = question.createdBy && question.createdBy.toString() === req.user._id.toString();
+    const isPrivileged = req.user.role === 'admin' || req.user.role === 'moderator';
+    if (!isOwner && !isPrivileged) {
+      return res.status(403).json({ message: 'Only question owner or admin can accept an answer' });
+    }
+
+    const previousAccepted = question.acceptedAnswerId;
+    question.acceptedAnswerId = answer._id;
+    question.answered = true;
+    question.solvedAt = new Date();
+    await question.save();
+
+    // 奖励答主互助值与信任分
+    if (answer.createdBy) {
+      await User.findByIdAndUpdate(answer.createdBy._id || answer.createdBy, {
+        $inc: { trustScore: 2, helpValue: 1 }
+      });
+      await Notification.create({
+        userId: answer.createdBy._id || answer.createdBy,
+        message: `你的回答被采纳为最佳答案：${question.title}`,
+        type: 'accept',
+        relatedId: answer._id
+      });
+    }
+
+    return res.status(200).json({ acceptedAnswerId: question.acceptedAnswerId, replaced: !!previousAccepted });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 const getAnswers = async (req, res) => {
   try {
     const { questionId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(questionId)) {
       return res.status(400).json({ message: 'Invalid question ID' });
     }
-    const sort = req.query.sort || 'time';
+    const sortMode = req.query.sort || 'time';
 
     let sortOption = {};
-    if (sort === 'likes') {
+    if (sortMode === 'likes') {
       sortOption = { isPinned: -1, likes: -1 };
-    } else if (sort === 'comments') {
+    } else if (sortMode === 'comments') {
       sortOption = { isPinned: -1, commentCount: -1 };
     } else {
       sortOption = { isPinned: -1, createdAt: -1 };
@@ -71,7 +118,7 @@ const getAnswers = async (req, res) => {
 
     const answers = await Answer.find({ questionId, isDeleted: false })
       .sort(sortOption)
-      .populate('createdBy', 'username');
+      .populate('createdBy', 'username helpValue trustScore');
 
     const viewerId = req.user?._id?.toString();
     let favoriteSet = new Set();
@@ -80,7 +127,7 @@ const getAnswers = async (req, res) => {
       favoriteSet = new Set(req.user.favorites.map((fid) => fid.toString()));
     }
 
-    const shaped = answers.map((a) => {
+    const shaped = answers.map((a, idx) => {
       const likedSet = new Set((a.likedBy || []).map((uid) => uid.toString()));
       const dislikedSet = new Set((a.dislikedBy || []).map((uid) => uid.toString()));
       const likedByMe = viewerId ? likedSet.has(viewerId) : false;
@@ -95,11 +142,30 @@ const getAnswers = async (req, res) => {
         dislikedByMe,
         favoritedByMe,
         authorName: a.createdBy?.username,
-        authorId: a.createdBy?._id
+        authorId: a.createdBy?._id,
+        authorHelpValue: a.createdBy?.helpValue || 0,
+        authorTrustScore: a.createdBy?.trustScore || 0,
+        orderIndex: idx
       };
     });
 
-    return res.status(200).json({ answers: shaped });
+    // 采纳的答案置顶
+    const acceptedId = (await Question.findById(questionId))?.acceptedAnswerId?.toString();
+    const sorted = shaped.sort((a, b) => {
+      if (acceptedId && (a._id?.toString() === acceptedId || a.id === acceptedId)) return -1;
+      if (acceptedId && (b._id?.toString() === acceptedId || b.id === acceptedId)) return 1;
+      if (a.pinned && !b.pinned) return -1;
+      if (b.pinned && !a.pinned) return 1;
+      if (sortMode === 'time') {
+        const helpA = a.authorHelpValue || 0;
+        const helpB = b.authorHelpValue || 0;
+        if (helpA !== helpB) return helpB - helpA;
+      }
+      // Preserve original DB sort order as final tiebreaker
+      return (a.orderIndex || 0) - (b.orderIndex || 0);
+    });
+
+    return res.status(200).json({ answers: sorted, acceptedAnswerId: acceptedId });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
@@ -366,5 +432,5 @@ const toggleFavorite = async (req, res) => {
 module.exports = {
   createAnswer, getAnswers, updateAnswer, deleteAnswer,
   likeAnswer, dislikeAnswer, createComment, getComments,
-  deleteComment, toggleFavorite
+  deleteComment, toggleFavorite, acceptAnswer
 };

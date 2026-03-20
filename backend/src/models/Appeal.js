@@ -7,7 +7,10 @@ const AppealSchema = new mongoose.Schema({
   reason: { type: String, required: true },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   adminResponse: { type: String },
+  // 证据化申诉支持附件与补充文本
+  evidenceText: { type: String },
+  evidenceUrls: [{ type: String }],
   createdAt: { type: Date, default: Date.now }
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Appeal', AppealSchema);

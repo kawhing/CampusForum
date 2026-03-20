@@ -73,7 +73,7 @@ function StatsOverview() {
           <Card>
             <Statistic
               title="总用户数"
-              value={stats?.totalUsers || 0}
+              value={stats?.users || stats?.totalUsers || 0}
               prefix={<UserOutlined />}
               valueStyle={{ color: '#1890ff' }}
             />
@@ -83,7 +83,7 @@ function StatsOverview() {
           <Card>
             <Statistic
               title="总问题数"
-              value={stats?.totalQuestions || 0}
+              value={stats?.questions || stats?.totalQuestions || 0}
               prefix={<QuestionCircleOutlined />}
               valueStyle={{ color: '#52c41a' }}
             />
@@ -93,7 +93,7 @@ function StatsOverview() {
           <Card>
             <Statistic
               title="总回答数"
-              value={stats?.totalAnswers || 0}
+              value={stats?.answers || stats?.totalAnswers || 0}
               prefix={<MessageOutlined />}
               valueStyle={{ color: '#faad14' }}
             />
@@ -109,7 +109,77 @@ function StatsOverview() {
             />
           </Card>
         </Col>
+        <Col xs={12} sm={6}>
+          <Card>
+            <Statistic
+              title="24h首响率"
+              value={((stats?.firstResponseRate || 0) * 100).toFixed(1) + '%'}
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card>
+            <Statistic
+              title="违规率（24h）"
+              value={((stats?.violationRate || 0) * 100).toFixed(1) + '%'}
+              valueStyle={{ color: '#ff4d4f' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card>
+            <Statistic
+              title="申诉通过率"
+              value={((stats?.appealPassRate || 0) * 100).toFixed(1) + '%'}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card>
+            <Statistic
+              title="平均处理时长(小时)"
+              value={(stats?.avgHandleHours || 0).toFixed(2)}
+              valueStyle={{ color: '#faad14' }}
+            />
+          </Card>
+        </Col>
       </Row>
+      {stats?.courseStats?.length > 0 && (
+        <Card style={{ marginTop: 16 }} title="课程解决率">
+          <List
+            dataSource={stats.courseStats}
+            renderItem={(c) => (
+              <List.Item>
+                <Space>
+                  <Tag color="blue">{c.course || '未分类'}</Tag>
+                  <Text>解决率 {(c.solveRate * 100).toFixed(1)}%</Text>
+                  <Text>平均耗时 {(c.avgSolveHours || 0).toFixed(2)} h</Text>
+                </Space>
+              </List.Item>
+            )}
+          />
+        </Card>
+      )}
+      {stats?.urgentQueue?.length > 0 && (
+        <Card style={{ marginTop: 16 }} title="紧急求助优先队列">
+          <List
+            dataSource={stats.urgentQueue}
+            renderItem={(q) => (
+              <List.Item>
+                <Space direction="vertical">
+                  <Text strong>{q.title}</Text>
+                  <Tag color="volcano">紧急</Tag>
+                  <Text type="secondary">
+                    {q.createdAt ? new Date(q.createdAt).toLocaleString('zh-CN') : ''}
+                  </Text>
+                </Space>
+              </List.Item>
+            )}
+          />
+        </Card>
+      )}
     </Spin>
   );
 }
