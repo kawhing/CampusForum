@@ -22,12 +22,12 @@ const AUTO_ACCEPT_MESSAGE = '你的回答已因点赞数达到阈值被自动设
 const normalizeAuthorId = (createdBy) => {
   const rawAuthorId = createdBy?._id || createdBy?.id || createdBy;
   if (!rawAuthorId) return null;
-  return rawAuthorId?.toString ? rawAuthorId.toString() : rawAuthorId;
+  return typeof rawAuthorId.toString === 'function' ? rawAuthorId.toString() : rawAuthorId;
 };
 
 const extractAuthorStats = (createdBy) => ({
-  authorHelpValue: createdBy?.helpValue || 0,
-  authorTrustScore: createdBy?.trustScore || 0
+  authorHelpValue: createdBy?.helpValue ?? 0,
+  authorTrustScore: createdBy?.trustScore ?? 0
 });
 
 const containsBadWords = (text = '') => {
