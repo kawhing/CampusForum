@@ -9,6 +9,7 @@ import Profile from './pages/Profile';
 import AdminConsole from './pages/admin/AdminConsole';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Chat from './pages/Chat';
 
 export default function App() {
   return (
@@ -37,6 +38,14 @@ export default function App() {
           element={
             <PrivateRoute roles={['admin', 'moderator']}>
               <AdminConsole />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="chat"
+          element={
+            <PrivateRoute>
+              <Chat />
             </PrivateRoute>
           }
         />

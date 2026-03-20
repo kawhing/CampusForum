@@ -10,6 +10,7 @@ const questionRoutes = require('./routes/questions');
 const { questionAnswersRouter, answerRouter } = require('./routes/answers');
 const userRoutes = require('./routes/users');
 const adminRoutes = require('./routes/admin');
+const chatRoutes = require('./routes/chat');
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api/questions/:questionId/answers', questionAnswersRouter);
 app.use('/api', answerRouter);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/chat', chatRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
