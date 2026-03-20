@@ -280,7 +280,55 @@ make docker-down
 make docker-logs
 ```
 
-## 🔧 配置说明
+## 🔑 默认管理员账户
+
+后端首次启动时会自动检测数据库中是否存在管理员账户。如果不存在，则自动创建一个默认管理员账户：
+
+| 字段 | 默认值 |
+|------|--------|
+| **邮箱** | `admin@campus.edu` |
+| **密码** | `Admin123456` |
+| **用户名** | `admin` |
+
+> ⚠️ **请在生产环境部署后立即登录并修改管理员密码！**
+
+可通过 `.env` 文件中的环境变量自定义管理员账户（必须在**首次**启动前设置）：
+
+```env
+ADMIN_EMAIL=your_admin@example.com
+ADMIN_PASSWORD=YourSecurePassword123
+ADMIN_USERNAME=youradmin
+```
+
+密码规则：至少6位，必须包含字母和数字。
+
+---
+
+## 🗄️ 数据库访问
+
+本项目默认使用**无密码认证**的 MongoDB（开发/单机部署场景）：
+
+| 项目 | 值 |
+|------|----|
+| **连接地址** | `mongodb://localhost:27017` |
+| **数据库名** | `anon-qa` |
+| **认证** | 无（默认不设置用户名/密码） |
+
+Docker 部署时，MongoDB 仅对内部 Docker 网络暴露，外部可通过 `localhost:27017` 访问（仅用于调试）。
+
+> ⚠️ **生产环境**强烈建议启用 MongoDB 认证。在 `docker-compose.yml` 的 `mongodb` 服务中添加：
+> ```yaml
+> environment:
+>   MONGO_INITDB_ROOT_USERNAME: admin
+>   MONGO_INITDB_ROOT_PASSWORD: your_db_password
+> ```
+> 同时将 `MONGODB_URI` 更新为：
+> ```
+> MONGODB_URI=mongodb://admin:your_db_password@mongodb:27017/anon-qa?authSource=admin
+> ```
+
+---
+
 
 ### 环境变量
 主要环境变量（`.env`）：

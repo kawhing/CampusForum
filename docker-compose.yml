@@ -32,6 +32,9 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       PORT: 5000
       NODE_ENV: production
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@campus.edu}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123456}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
     networks:
       - anon-qa-network
     depends_on:
