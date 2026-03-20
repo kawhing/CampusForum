@@ -236,6 +236,7 @@ const getAnswers = async (req, res) => {
       const favoritedByMe = viewerId ? favoriteSet.has(a._id.toString()) : false;
       const { createdBy, ...rest } = a.toObject();
       const publicAnswer = {
+        // Keep both _id and id for backward compatibility with existing clients
         _id: rest._id,
         id: normalizeId(rest._id),
         content: rest.content,
@@ -532,6 +533,7 @@ const getComments = async (req, res) => {
     const normalizedComments = comments.map((c) => {
       const { createdBy, ...rest } = c.toObject();
       const publicComment = {
+        // Keep both _id and id for backward compatibility with existing clients
         _id: rest._id,
         id: normalizeId(rest._id),
         content: rest.content,
