@@ -202,14 +202,14 @@ const createAppeal = async (req, res) => {
     // 举报扣除被举报人的信任分
     let targetOwnerId = null;
     if (targetType === 'answer') {
-      const answer = await Answer.findById(targetId).select('createdBy isDeleted');
+      const answer = await Answer.findById(targetId).select('createdBy isDeleted').lean();
       if (!answer || answer.isDeleted) {
         return res.status(404).json({ message: 'Reported answer not found' });
       }
       targetOwnerId = answer.createdBy;
     } else if (targetType === 'question') {
-      const question = await Question.findById(targetId).select('createdBy isArchived');
-      if (!question) {
+      const question = await Question.findById(targetId).select('createdBy isArchived').lean();
+      if (!question || question.isArchived) {
         return res.status(404).json({ message: 'Reported question not found' });
       }
       targetOwnerId = question.createdBy;
