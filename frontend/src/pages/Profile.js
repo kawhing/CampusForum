@@ -67,24 +67,6 @@ const renderQuestionLink = (item, fallbackText) => {
   );
 };
 
-const renderQuestionLink = (item, fallbackText) => {
-  const question =
-    item && typeof item.questionId === 'object' && item.questionId !== null
-      ? item.questionId
-      : null;
-  const questionId = question?._id || item?.questionId;
-
-  if (!questionId) {
-    return <Text>{fallbackText}</Text>;
-  }
-
-  return (
-    <Link to={`/questions/${questionId}`}>
-      {item.questionTitle || question?.title || '查看问题'}
-    </Link>
-  );
-};
-
 const APPEAL_STATUS_MAP = {
   pending: { label: '待处理', color: 'orange', icon: <ClockCircleOutlined /> },
   approved: { label: '已批准', color: 'green', icon: <CheckCircleOutlined /> },
