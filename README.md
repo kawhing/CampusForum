@@ -304,6 +304,8 @@ ADMIN_USERNAME=youradmin
 # ALLOW_ADMIN_SYNC_WHEN_BLOCKED=false
 ```
 
+> 提示：使用 Docker 部署时，`docker-compose.yml` 会将上述管理员相关环境变量（含可选同步开关）传递给后端容器，只需在根目录 `.env` 中设置即可生效。
+
 > 提示：后端启动时会自动将已存在的管理员账户同步到上述环境变量配置（邮箱、用户名、密码），以确保能使用最新配置的管理员凭据登录。
 
 密码规则：至少6位，必须包含字母和数字。

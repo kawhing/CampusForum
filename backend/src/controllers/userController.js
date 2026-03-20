@@ -199,6 +199,33 @@ const createAppeal = async (req, res) => {
       return res.status(400).json({ message: 'Reason is required' });
     }
 
+    // 举报扣除被举报人的信任分
+    let targetOwnerId = null;
+    if (targetType === 'answer') {
+      const answer = await Answer.findById(targetId).select('createdBy isDeleted').lean();
+      if (!answer || answer.isDeleted) {
+        return res.status(404).json({ message: 'Reported answer not found' });
+      }
+      targetOwnerId = answer.createdBy;
+    } else if (targetType === 'question') {
+      const question = await Question.findById(targetId).select('createdBy isArchived').lean();
+      if (!question || question.isArchived) {
+        return res.status(404).json({ message: 'Reported question not found' });
+      }
+      targetOwnerId = question.createdBy;
+    }
+    if (targetOwnerId) {
+      await User.findByIdAndUpdate(targetOwnerId, [
+        {
+          $set: {
+            trustScore: {
+              $max: [{ $subtract: ['$trustScore', 2] }, 0]
+            }
+          }
+        }
+      ]);
+    }
+
     const appeal = new Appeal({
       userId: req.user._id,
       targetId,
