@@ -263,6 +263,32 @@ export default function Chat() {
     loadFriendMessages(friendId);
   };
 
+  const renderMemberAvatar = (member) => {
+    const memberUserId = member.user?._id ?? null;
+    const canAddFriend = memberUserId !== null && memberUserId !== user._id;
+    return (
+      <Avatar
+        style={canAddFriend ? { cursor: 'pointer' } : undefined}
+        tabIndex={canAddFriend ? 0 : undefined}
+        onClick={canAddFriend ? () => handleAddFriend(memberUserId) : undefined}
+        onKeyDown={
+          canAddFriend
+            ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleAddFriend(memberUserId);
+                }
+              }
+            : undefined
+        }
+        aria-label={canAddFriend ? '点击头像加好友' : undefined}
+        role={canAddFriend ? 'button' : undefined}
+      >
+        {(member.nickname?.[0] || '?').toUpperCase()}
+      </Avatar>
+    );
+  };
+
   const handleSendFriendMessage = async () => {
     if (!selectedFriendId || !friendMessageInput.trim()) return;
     setFriendSending(true);
@@ -465,36 +491,7 @@ export default function Chat() {
                             }
                           >
                             <List.Item.Meta
-                              avatar={
-                                (() => {
-                                  const memberUserId = member.user?._id;
-                                  const canAddFriend =
-                                    memberUserId !== undefined &&
-                                    memberUserId !== null &&
-                                    memberUserId !== user._id;
-                                  return (
-                                    <Avatar
-                                      style={canAddFriend ? { cursor: 'pointer' } : undefined}
-                                      tabIndex={canAddFriend ? 0 : undefined}
-                                      onClick={canAddFriend ? () => handleAddFriend(memberUserId) : undefined}
-                                      onKeyDown={
-                                        canAddFriend
-                                          ? (e) => {
-                                              if (e.key === 'Enter' || e.key === ' ') {
-                                                e.preventDefault();
-                                                handleAddFriend(memberUserId);
-                                              }
-                                            }
-                                          : undefined
-                                      }
-                                      aria-label={canAddFriend ? '点击头像加好友' : undefined}
-                                      role={canAddFriend ? 'button' : undefined}
-                                    >
-                                      {(member.nickname?.[0] || '?').toUpperCase()}
-                                    </Avatar>
-                                  );
-                                })()
-                              }
+                              avatar={renderMemberAvatar(member)}
                               title={
                                 <Space>
                                   <Text strong>{member.nickname}</Text>
