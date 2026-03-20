@@ -181,13 +181,19 @@ function MyAnswers() {
             <List.Item.Meta
               avatar={<MessageOutlined style={{ fontSize: 20, color: '#52c41a' }} />}
               title={
-                a.questionId ? (
-                  <Link to={`/questions/${a.questionId}`}>
-                    {a.questionTitle || '查看问题'}
-                  </Link>
-                ) : (
-                  <Text>匿名问题</Text>
-                )
+                (() => {
+                  const question =
+                    typeof a.questionId === 'object' ? a.questionId : null;
+                  const questionId = question?._id || a.questionId;
+                  if (!questionId) {
+                    return <Text>匿名问题</Text>;
+                  }
+                  return (
+                    <Link to={`/questions/${questionId}`}>
+                      {a.questionTitle || question?.title || '查看问题'}
+                    </Link>
+                  );
+                })()
               }
               description={
                 <Space direction="vertical" size={4} style={{ width: '100%' }}>
@@ -246,13 +252,19 @@ function MyFavorites() {
             <List.Item.Meta
               avatar={<StarOutlined style={{ fontSize: 20, color: '#faad14' }} />}
               title={
-                a.questionId ? (
-                  <Link to={`/questions/${a.questionId}`}>
-                    {a.questionTitle || '查看问题'}
-                  </Link>
-                ) : (
-                  <Text>已删除的问题</Text>
-                )
+                (() => {
+                  const question =
+                    typeof a.questionId === 'object' ? a.questionId : null;
+                  const questionId = question?._id || a.questionId;
+                  if (!questionId) {
+                    return <Text>已删除的问题</Text>;
+                  }
+                  return (
+                    <Link to={`/questions/${questionId}`}>
+                      {a.questionTitle || question?.title || '查看问题'}
+                    </Link>
+                  );
+                })()
               }
               description={
                 <Space direction="vertical" size={4} style={{ width: '100%' }}>
