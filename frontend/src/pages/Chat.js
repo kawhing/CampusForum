@@ -266,7 +266,8 @@ export default function Chat() {
   const renderMemberAvatar = (member) => {
     const memberUserId = member.user?._id ?? null;
     const canAddFriend = memberUserId !== null && memberUserId !== user._id;
-    const ariaLabel = canAddFriend ? 'Add friend' : `Room member ${member.nickname || 'User'}`;
+    const displayName = member.nickname || member.user?.username || 'User';
+    const ariaLabel = canAddFriend ? 'Add friend' : `Room member ${displayName}`;
     return (
       <Avatar
         style={canAddFriend ? { cursor: 'pointer' } : undefined}
@@ -275,7 +276,7 @@ export default function Chat() {
         onKeyDown={
           canAddFriend
             ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (e.key === 'Enter' || e.key === ' ' || e.key === 'Space') {
                   e.preventDefault();
                   handleAddFriend(memberUserId);
                 }
