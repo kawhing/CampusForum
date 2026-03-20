@@ -522,7 +522,11 @@ export default function QuestionDetail() {
   if (!currentQuestion) return null;
 
   const questionAuthorId =
-    currentQuestion.authorId || currentQuestion.author?.id;
+    currentQuestion.authorId ||
+    currentQuestion.author?._id ||
+    currentQuestion.author?.id ||
+    currentQuestion.createdBy?._id ||
+    currentQuestion.createdBy?.id;
 
   return (
     <div>

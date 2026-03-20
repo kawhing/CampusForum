@@ -155,6 +155,16 @@ const getAnswers = async (req, res) => {
       if (acceptedId && (b._id?.toString() === acceptedId || b.id === acceptedId)) return 1;
       if (a.pinned && !b.pinned) return -1;
       if (b.pinned && !a.pinned) return 1;
+      if (sortMode === 'likes') {
+        const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
+        if (likeDiff !== 0) return likeDiff;
+      }
+      if (sortMode === 'comments') {
+        const commentDiff = (b.commentCount || 0) - (a.commentCount || 0);
+        if (commentDiff !== 0) return commentDiff;
+      }
+      const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
+      if (likeDiff !== 0) return likeDiff;
       if (sortMode === 'time') {
         const helpA = a.authorHelpValue || 0;
         const helpB = b.authorHelpValue || 0;
