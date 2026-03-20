@@ -177,6 +177,9 @@ docker compose up -d
 | `JWT_EXPIRES_IN` | `7d` | Token 有效期 |
 | `PORT` | `5000` | 后端服务端口 |
 | `NODE_ENV` | `production` | 运行环境 |
+| `ADMIN_EMAIL` | `admin@campus.edu` | 默认管理员邮箱（首次启动自动创建） |
+| `ADMIN_PASSWORD` | `Admin123456` | 默认管理员密码（**⚠️ 部署后请立即修改**） |
+| `ADMIN_USERNAME` | `admin` | 默认管理员用户名 |
 
 ---
 
