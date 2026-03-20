@@ -19,6 +19,11 @@ const MIN_VOTE_WEIGHT = 1;
 const AUTO_ACCEPT_LIKE_THRESHOLD = 10;
 const AUTO_ACCEPT_MESSAGE = '你的回答已因点赞数达到阈值被自动设为最佳答案';
 
+const normalizeAuthorId = (createdBy) => {
+  const rawAuthorId = createdBy?._id || createdBy?.id || createdBy;
+  return rawAuthorId?.toString ? rawAuthorId.toString() : rawAuthorId;
+};
+
 const containsBadWords = (text = '') => {
   const lower = text.toLowerCase();
   return BAD_WORDS.some((w) => lower.includes(w));
@@ -203,8 +208,7 @@ const getAnswers = async (req, res) => {
       const dislikedByMe = viewerId ? dislikedSet.has(viewerId) : false;
       const favoritedByMe = viewerId ? favoriteSet.has(a._id.toString()) : false;
       const { createdBy, ...rest } = a.toObject();
-      const rawAuthorId = createdBy?._id || createdBy?.id || createdBy;
-      const authorId = rawAuthorId?.toString ? rawAuthorId.toString() : rawAuthorId;
+      const authorId = normalizeAuthorId(createdBy);
 
       return {
         ...rest,
@@ -483,10 +487,9 @@ const getComments = async (req, res) => {
       .sort({ createdAt: 1 })
       .populate('createdBy', 'helpValue trustScore');
 
-    const shaped = comments.map((c) => {
+    const normalizedComments = comments.map((c) => {
       const { createdBy, ...rest } = c.toObject();
-      const rawAuthorId = createdBy?._id || createdBy?.id || createdBy;
-      const authorId = rawAuthorId?.toString ? rawAuthorId.toString() : rawAuthorId;
+      const authorId = normalizeAuthorId(createdBy);
       return {
         ...rest,
         authorId,
@@ -495,7 +498,7 @@ const getComments = async (req, res) => {
       };
     });
 
-    return res.status(200).json({ comments: shaped });
+    return res.status(200).json({ comments: normalizedComments });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
