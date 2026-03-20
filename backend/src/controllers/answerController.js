@@ -32,8 +32,7 @@ const normalizeAuthorId = (createdBy) => {
 
 /**
  * Extract author reputation metrics from a populated user document.
- * Accepts null/undefined and uses nullish coalescing to preserve legitimate 0 scores
- * while defaulting missing values to 0.
+ * Returns author reputation metrics with safe defaults for missing values.
  */
 const extractAuthorStats = (createdBy) => ({
   authorHelpValue: createdBy?.helpValue ?? 0,
@@ -230,10 +229,26 @@ const getAnswers = async (req, res) => {
       const dislikedByMe = viewerId ? dislikedSet.has(viewerId) : false;
       const favoritedByMe = viewerId ? favoriteSet.has(a._id.toString()) : false;
       const { createdBy, ...rest } = a.toObject();
+      const publicAnswer = {
+        _id: rest._id,
+        id: rest._id?.toString ? rest._id.toString() : rest._id,
+        content: rest.content,
+        questionId: rest.questionId,
+        createdAt: rest.createdAt,
+        likes: rest.likes,
+        dislikes: rest.dislikes,
+        likedBy: rest.likedBy,
+        dislikedBy: rest.dislikedBy,
+        isPinned: rest.isPinned,
+        pinned: rest.isPinned,
+        isDeleted: rest.isDeleted,
+        isHidden: rest.isHidden,
+        commentCount: rest.commentCount
+      };
       const authorMeta = buildAuthorMeta(createdBy);
 
       return {
-        ...rest,
+        ...publicAnswer,
         likeCount: a.likes,
         dislikeCount: a.dislikes,
         likedByMe,
@@ -509,8 +524,16 @@ const getComments = async (req, res) => {
 
     const normalizedComments = comments.map((c) => {
       const { createdBy, ...rest } = c.toObject();
+      const publicComment = {
+        _id: rest._id,
+        id: rest._id?.toString ? rest._id.toString() : rest._id,
+        content: rest.content,
+        answerId: rest.answerId,
+        createdAt: rest.createdAt,
+        isDeleted: rest.isDeleted
+      };
       return {
-        ...rest,
+        ...publicComment,
         ...buildAuthorMeta(createdBy)
       };
     });
