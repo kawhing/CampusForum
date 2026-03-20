@@ -6,17 +6,31 @@ const Notification = require('../models/Notification');
 const User = require('../models/User');
 
 const BAD_WORDS = ['傻逼', '去死', 'fuck', 'shit', '滚', '垃圾', '操你', 'nt'].map((w) => w.toLowerCase());
+const MINUTES_PER_HOUR = 60;
 const MS_PER_MINUTE = 60 * 1000;
-const LOW_TRUST_ANSWER_COOLDOWN_MINUTES = 60 * 24; // 1 day
-const VERY_LOW_TRUST_COOLDOWN_MINUTES = 60 * 48; // 2 days
+const LOW_TRUST_ANSWER_COOLDOWN_MINUTES = 24 * MINUTES_PER_HOUR; // 1 day
+const VERY_LOW_TRUST_COOLDOWN_MINUTES = 48 * MINUTES_PER_HOUR; // 2 days
 const LOW_TRUST_THRESHOLD = 40;
 const VERY_LOW_TRUST_THRESHOLD = 20;
 const ANONYMOUS_LABEL_PREFIX = '匿名回答者';
 const OFFENSIVE_CONTENT_PENALTY = 5;
+const VOTE_TRUST_WEIGHT_DIVISOR = 20;
+const MIN_VOTE_WEIGHT = 1;
+const AUTO_ACCEPT_LIKE_THRESHOLD = 10;
+const AUTO_ACCEPT_MESSAGE = '你的回答已因点赞数达到阈值被自动设为最佳答案';
 
 const containsBadWords = (text = '') => {
   const lower = text.toLowerCase();
   return BAD_WORDS.some((w) => lower.includes(w));
+};
+
+const adjustUserTrust = async (userId, delta) => {
+  if (!userId || delta === undefined || delta === null) return;
+  const user = await User.findById(userId).select('trustScore');
+  if (!user) return;
+  const current = typeof user.trustScore === 'number' ? user.trustScore : 0;
+  user.trustScore = Math.max(0, current + delta);
+  await user.save();
 };
 
 const createAnswer = async (req, res) => {
@@ -47,8 +61,8 @@ const createAnswer = async (req, res) => {
       .sort({ createdAt: -1 })
       .select('createdAt');
 
-    if (latestAnswer) {
-      const minutesSinceLastAnswer = (Date.now() - latestAnswer.createdAt.getTime()) / MS_PER_MINUTE;
+    if (latestAnswer && latestAnswer.createdAt && !Number.isNaN(new Date(latestAnswer.createdAt).getTime())) {
+      const minutesSinceLastAnswer = (Date.now() - new Date(latestAnswer.createdAt).getTime()) / MS_PER_MINUTE;
       let cooldownMinutes = 0;
       if (responder.trustScore < VERY_LOW_TRUST_THRESHOLD) {
         cooldownMinutes = VERY_LOW_TRUST_COOLDOWN_MINUTES;
@@ -214,12 +228,12 @@ const getAnswers = async (req, res) => {
       if (sortMode === 'likes') {
         const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
         if (likeDiff !== 0) return likeDiff;
+        return (a.orderIndex || 0) - (b.orderIndex || 0);
       } else if (sortMode === 'comments') {
         const commentDiff = (b.commentCount || 0) - (a.commentCount || 0);
         if (commentDiff !== 0) return commentDiff;
+        return (a.orderIndex || 0) - (b.orderIndex || 0);
       } else if (sortMode === 'time') {
-        const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
-        if (likeDiff !== 0) return likeDiff;
         const helpA = a.authorHelpValue || 0;
         const helpB = b.authorHelpValue || 0;
         if (helpA !== helpB) return helpB - helpA;
@@ -303,22 +317,53 @@ const likeAnswer = async (req, res) => {
     }
 
     const userId = req.user._id;
+    const voter = await User.findById(userId).select('trustScore');
+    const voterTrust = voter?.trustScore || 0;
+    const voteWeight = Math.max(MIN_VOTE_WEIGHT, Math.floor(voterTrust / VOTE_TRUST_WEIGHT_DIVISOR));
+
     const alreadyLiked = answer.likedBy.some((uid) => uid.toString() === userId.toString());
     const alreadyDisliked = answer.dislikedBy.some((uid) => uid.toString() === userId.toString());
+    let trustDelta = 0;
 
     if (alreadyLiked) {
       answer.likedBy = answer.likedBy.filter((uid) => uid.toString() !== userId.toString());
       answer.likes = Math.max(0, answer.likes - 1);
+      trustDelta -= voteWeight;
     } else {
       if (alreadyDisliked) {
         answer.dislikedBy = answer.dislikedBy.filter((uid) => uid.toString() !== userId.toString());
         answer.dislikes = Math.max(0, answer.dislikes - 1);
+        trustDelta += voteWeight; // remove previous penalty
       }
       answer.likedBy.push(userId);
       answer.likes += 1;
+      trustDelta += voteWeight;
     }
 
     await answer.save();
+    if (answer.createdBy && trustDelta !== 0) {
+      await adjustUserTrust(answer.createdBy, trustDelta);
+    }
+
+    // Auto-accept when likes reach threshold and no accepted answer yet
+    const question = await Question.findById(answer.questionId);
+    if (question && answer.likes >= AUTO_ACCEPT_LIKE_THRESHOLD) {
+      const updateResult = await Question.updateOne(
+        { _id: question._id, acceptedAnswerId: null },
+        { $set: { acceptedAnswerId: answer._id, answered: true, solvedAt: new Date() } }
+      );
+      if (updateResult.modifiedCount > 0 && answer.createdBy) {
+        await User.findByIdAndUpdate(answer.createdBy, { $inc: { helpValue: 1, trustScore: 1 } });
+        const autoAcceptMessage = question.title ? `${AUTO_ACCEPT_MESSAGE}: ${question.title}` : AUTO_ACCEPT_MESSAGE;
+        await Notification.create({
+          userId: answer.createdBy,
+          message: autoAcceptMessage,
+          type: 'accept',
+          relatedId: answer._id
+        });
+      }
+    }
+
     return res.status(200).json({
       likes: answer.likes,
       dislikes: answer.dislikes,
@@ -343,22 +388,34 @@ const dislikeAnswer = async (req, res) => {
     }
 
     const userId = req.user._id;
+    const voter = await User.findById(userId).select('trustScore');
+    const voterTrust = voter?.trustScore || 0;
+    const voteWeight = Math.max(MIN_VOTE_WEIGHT, Math.floor(voterTrust / VOTE_TRUST_WEIGHT_DIVISOR));
+
     const alreadyDisliked = answer.dislikedBy.some((uid) => uid.toString() === userId.toString());
     const alreadyLiked = answer.likedBy.some((uid) => uid.toString() === userId.toString());
+    let trustDelta = 0;
 
     if (alreadyDisliked) {
       answer.dislikedBy = answer.dislikedBy.filter((uid) => uid.toString() !== userId.toString());
       answer.dislikes = Math.max(0, answer.dislikes - 1);
+      trustDelta += voteWeight; // remove previous penalty
     } else {
       if (alreadyLiked) {
         answer.likedBy = answer.likedBy.filter((uid) => uid.toString() !== userId.toString());
         answer.likes = Math.max(0, answer.likes - 1);
+        trustDelta -= voteWeight; // remove previous reward
       }
       answer.dislikedBy.push(userId);
       answer.dislikes += 1;
+      trustDelta -= voteWeight;
     }
 
     await answer.save();
+    if (answer.createdBy && trustDelta !== 0) {
+      await adjustUserTrust(answer.createdBy, trustDelta);
+    }
+
     return res.status(200).json({
       likes: answer.likes,
       dislikes: answer.dislikes,
