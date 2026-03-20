@@ -4,7 +4,6 @@ const Question = require('../models/Question');
 const Comment = require('../models/Comment');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
-const Question = require('../models/Question');
 
 const createAnswer = async (req, res) => {
   try {
