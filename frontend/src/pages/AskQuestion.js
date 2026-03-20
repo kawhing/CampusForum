@@ -12,6 +12,7 @@ import {
 } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { createQuestion, getCategories } from '../api';
+import { DEFAULT_CATEGORIES } from '../constants/categories';
 import { ensureSupportPrompt } from '../utils/supportPrompt';
 
 const { Title } = Typography;
@@ -21,12 +22,16 @@ export default function AskQuestion() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     getCategories()
-      .then((res) => setCategories(res.data.categories || res.data || []))
+      .then((res) => {
+        const received = res.data.categories || res.data || [];
+        const merged = Array.from(new Set([...received, ...DEFAULT_CATEGORIES]));
+        setCategories(merged);
+      })
       .catch(() => {});
   }, []);
 

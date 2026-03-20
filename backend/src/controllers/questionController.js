@@ -25,6 +25,7 @@ const RISK_KEYWORDS = [
 const MIN_TRUST_FOR_COOLDOWN = 20;
 const LOW_TRUST_COOLDOWN_MINUTES = 10;
 const HOURLY_QUESTION_LIMIT = 3;
+const DEFAULT_CATEGORIES = ['计算机', '数学', '技术', '学习', '生活', '娱乐'];
 
 const createQuestion = async (req, res) => {
   try {
@@ -265,7 +266,8 @@ const deleteQuestion = async (req, res) => {
 const getCategories = async (req, res) => {
   try {
     const categories = await Question.distinct('category');
-    return res.status(200).json({ categories });
+    const merged = Array.from(new Set([...DEFAULT_CATEGORIES, ...categories]));
+    return res.status(200).json({ categories: merged });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error' });

@@ -25,6 +25,8 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchQuestions } from '../store/slices/questionsSlice';
 import { getCategories } from '../api';
+import { DEFAULT_CATEGORIES } from '../constants/categories';
+import { getAuthorDisplayName } from '../utils/questionOwner';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -47,14 +49,14 @@ export default function QuestionList() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { questions, total, loading, error } = useSelector((state) => state.questions);
-  const { token } = useSelector((state) => state.auth);
+  const { token, user: currentUser } = useSelector((state) => state.auth);
 
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [sort, setSort] = useState('time');
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
 
   const loadQuestions = useCallback(() => {
     dispatch(
@@ -74,7 +76,11 @@ export default function QuestionList() {
 
   useEffect(() => {
     getCategories()
-      .then((res) => setCategories(res.data.categories || res.data || []))
+      .then((res) => {
+        const received = res.data.categories || res.data || [];
+        const merged = Array.from(new Set([...received, ...DEFAULT_CATEGORIES]));
+        setCategories(merged);
+      })
       .catch(() => {});
   }, []);
 
@@ -188,7 +194,7 @@ export default function QuestionList() {
                     <Col>
                       <Space size="small" style={{ color: '#999' }}>
                         <Text type="secondary">
-                          {q.authorName || q.author?.username || '匿名用户'}
+                          {getAuthorDisplayName(q, currentUser, '匿名用户')}
                         </Text>
                         <Text type="secondary">·</Text>
                         <ClockCircleOutlined />
