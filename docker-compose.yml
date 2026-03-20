@@ -68,6 +68,8 @@ services:
 
   # 可选：轻量级文本安全/心理风险模型服务（<1B 参数）
   safety-model:
+    profiles:
+      - safety
     build:
       context: ./docker/safety-model
     container_name: anon-qa-safety-model
