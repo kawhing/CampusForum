@@ -266,6 +266,9 @@ export default function Chat() {
   const renderMemberAvatar = (member) => {
     const memberUserId = member.user?._id ?? null;
     const canAddFriend = memberUserId !== null && memberUserId !== user._id;
+    const ariaLabel = canAddFriend
+      ? '点击头像加好友 / Add friend'
+      : `房间成员 ${member.nickname || '用户'}`;
     return (
       <Avatar
         style={canAddFriend ? { cursor: 'pointer' } : undefined}
@@ -274,14 +277,14 @@ export default function Chat() {
         onKeyDown={
           canAddFriend
             ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+                if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   handleAddFriend(memberUserId);
                 }
               }
             : undefined
         }
-        aria-label={canAddFriend ? '点击头像加好友 / Add friend' : undefined}
+        aria-label={ariaLabel}
         role={canAddFriend ? 'button' : undefined}
       >
         {(member.nickname?.[0] || '?').toUpperCase()}
