@@ -298,7 +298,13 @@ make docker-logs
 ADMIN_EMAIL=your_admin@example.com
 ADMIN_PASSWORD=YourSecurePassword123
 ADMIN_USERNAME=youradmin
+# 可选：是否在启动时同步管理员密码（默认 true，如需禁用设置为 false）
+# ALLOW_ADMIN_PASSWORD_SYNC=true
+# 可选：如果管理员被封禁，是否仍允许同步凭据（默认 false，仅紧急恢复时设置为 true）
+# ALLOW_ADMIN_SYNC_WHEN_BLOCKED=false
 ```
+
+> 提示：后端启动时会自动将已存在的管理员账户同步到上述环境变量配置（邮箱、用户名、密码），以确保能使用最新配置的管理员凭据登录。
 
 密码规则：至少6位，必须包含字母和数字。
 
