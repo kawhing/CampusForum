@@ -1,4 +1,5 @@
 fastapi==0.110.0
 uvicorn==0.23.2
-transformers==4.37.2
-torch==2.2.0
+# Patched for deserialization/RCE advisories
+transformers==4.48.0
+torch==2.6.0
