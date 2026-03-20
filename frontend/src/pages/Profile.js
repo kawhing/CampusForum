@@ -49,6 +49,42 @@ import {
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
+const renderQuestionLink = (item, fallbackText) => {
+  const question =
+    item && typeof item.questionId === 'object' && item.questionId !== null
+      ? item.questionId
+      : null;
+  const questionId = question?._id || item?.questionId;
+
+  if (!questionId) {
+    return <Text>{fallbackText}</Text>;
+  }
+
+  return (
+    <Link to={`/questions/${questionId}`}>
+      {item.questionTitle || question?.title || '查看问题'}
+    </Link>
+  );
+};
+
+const renderQuestionLink = (item, fallbackText) => {
+  const question =
+    item && typeof item.questionId === 'object' && item.questionId !== null
+      ? item.questionId
+      : null;
+  const questionId = question?._id || item?.questionId;
+
+  if (!questionId) {
+    return <Text>{fallbackText}</Text>;
+  }
+
+  return (
+    <Link to={`/questions/${questionId}`}>
+      {item.questionTitle || question?.title || '查看问题'}
+    </Link>
+  );
+};
+
 const APPEAL_STATUS_MAP = {
   pending: { label: '待处理', color: 'orange', icon: <ClockCircleOutlined /> },
   approved: { label: '已批准', color: 'green', icon: <CheckCircleOutlined /> },
@@ -180,21 +216,7 @@ function MyAnswers() {
           <List.Item key={a.id || a._id}>
             <List.Item.Meta
               avatar={<MessageOutlined style={{ fontSize: 20, color: '#52c41a' }} />}
-              title={
-                (() => {
-                  const question =
-                    typeof a.questionId === 'object' ? a.questionId : null;
-                  const questionId = question?._id || a.questionId;
-                  if (!questionId) {
-                    return <Text>匿名问题</Text>;
-                  }
-                  return (
-                    <Link to={`/questions/${questionId}`}>
-                      {a.questionTitle || question?.title || '查看问题'}
-                    </Link>
-                  );
-                })()
-              }
+              title={renderQuestionLink(a, '匿名问题')}
               description={
                 <Space direction="vertical" size={4} style={{ width: '100%' }}>
                   <Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0 }}>
@@ -251,21 +273,7 @@ function MyFavorites() {
           <List.Item key={a.id || a._id}>
             <List.Item.Meta
               avatar={<StarOutlined style={{ fontSize: 20, color: '#faad14' }} />}
-              title={
-                (() => {
-                  const question =
-                    typeof a.questionId === 'object' ? a.questionId : null;
-                  const questionId = question?._id || a.questionId;
-                  if (!questionId) {
-                    return <Text>已删除的问题</Text>;
-                  }
-                  return (
-                    <Link to={`/questions/${questionId}`}>
-                      {a.questionTitle || question?.title || '查看问题'}
-                    </Link>
-                  );
-                })()
-              }
+              title={renderQuestionLink(a, '已删除的问题')}
               description={
                 <Space direction="vertical" size={4} style={{ width: '100%' }}>
                   <Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0 }}>
