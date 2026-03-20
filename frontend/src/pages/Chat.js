@@ -266,9 +266,7 @@ export default function Chat() {
   const renderMemberAvatar = (member) => {
     const memberUserId = member.user?._id ?? null;
     const canAddFriend = memberUserId !== null && memberUserId !== user._id;
-    const ariaLabel = canAddFriend
-      ? '点击头像加好友 / Add friend'
-      : `房间成员 ${member.nickname || '用户'}`;
+    const ariaLabel = canAddFriend ? '点击头像加好友' : `房间成员 ${member.nickname || '用户'}`;
     return (
       <Avatar
         style={canAddFriend ? { cursor: 'pointer' } : undefined}
@@ -419,7 +417,7 @@ export default function Chat() {
                           loading={messageLoading}
                           rowKey="_id"
                           dataSource={messages}
-                          style={{ maxHeight: '60vh', minHeight: '40vh', overflowY: 'auto' }}
+                          style={{ maxHeight: 480, minHeight: 320, overflowY: 'auto' }}
                           locale={{ emptyText: '还没有人发言' }}
                           renderItem={(item) => (
                             <List.Item>
@@ -590,8 +588,8 @@ export default function Chat() {
                             rowKey="_id"
                             loading={friendLoading}
                             dataSource={friendMessages}
-                            style={{ maxHeight: '60vh', minHeight: '40vh', overflowY: 'auto' }}
-                            locale={{ emptyText: '暂时没有聊天记录' }}
+                          style={{ maxHeight: 480, minHeight: 320, overflowY: 'auto' }}
+                          locale={{ emptyText: '暂时没有聊天记录' }}
                             renderItem={(item) => (
                               <List.Item>
                                 <List.Item.Meta
