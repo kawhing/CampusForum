@@ -1,12 +1,100 @@
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const Question = require('../models/Question');
 const Answer = require('../models/Answer');
 const Notification = require('../models/Notification');
 const Appeal = require('../models/Appeal');
 const User = require('../models/User');
 
+const DEFAULT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+
 const getProfile = async (req, res) => {
   return res.status(200).json({ user: req.user });
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const { email, username } = req.body;
+    if (!email && !username) {
+      return res.status(400).json({ message: 'Email or username is required to update' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (email) {
+      const normalizedEmail = email.toLowerCase().trim();
+      const existing = await User.findOne({ email: normalizedEmail, _id: { $ne: req.user._id } });
+      if (existing) {
+        return res.status(400).json({ message: 'Email already in use' });
+      }
+      user.email = normalizedEmail;
+    }
+
+    if (username) {
+      const trimmed = username.trim();
+      if (!trimmed) {
+        return res.status(400).json({ message: 'Username cannot be empty' });
+      }
+      const existingUsername = await User.findOne({ username: trimmed, _id: { $ne: req.user._id } });
+      if (existingUsername) {
+        return res.status(400).json({ message: 'Username already in use' });
+      }
+      user.username = trimmed;
+    }
+
+    await user.save();
+    const userObj = user.toObject();
+    delete userObj.password;
+    return res.status(200).json({ user: userObj });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+    // Validate plain-text password strength (consistent with registration rules)
+    if (newPassword.length < 6 || !/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters and include letters and numbers' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: DEFAULT_EXPIRES_IN }
+    );
+
+    user.activeToken = token;
+    await user.save();
+
+    const userObj = user.toObject();
+    delete userObj.password;
+    return res.status(200).json({ message: 'Password updated successfully', token, user: userObj });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Server error' });
+  }
 };
 
 const getMyQuestions = async (req, res) => {
@@ -137,6 +225,14 @@ const getMyAppeals = async (req, res) => {
 };
 
 module.exports = {
-  getProfile, getMyQuestions, getMyAnswers, getMyFavorites,
-  getNotifications, markNotificationRead, createAppeal, getMyAppeals
+  getProfile,
+  updateProfile,
+  changePassword,
+  getMyQuestions,
+  getMyAnswers,
+  getMyFavorites,
+  getNotifications,
+  markNotificationRead,
+  createAppeal,
+  getMyAppeals
 };

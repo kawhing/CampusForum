@@ -74,6 +74,8 @@ export const deleteComment = (id) => api.delete(`/comments/${id}`);
 
 // Users
 export const getProfile = () => api.get('/users/profile');
+export const updateProfile = (data) => api.put('/users/profile', data);
+export const changePassword = (data) => api.put('/users/password', data);
 export const getMyQuestions = (params) => api.get('/users/questions', { params });
 export const getMyAnswers = (params) => api.get('/users/answers', { params });
 export const getMyFavorites = () => api.get('/users/favorites');

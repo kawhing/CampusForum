@@ -1,12 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const {
-  getProfile, getMyQuestions, getMyAnswers, getMyFavorites,
-  getNotifications, markNotificationRead, createAppeal, getMyAppeals
+  getProfile,
+  updateProfile,
+  changePassword,
+  getMyQuestions,
+  getMyAnswers,
+  getMyFavorites,
+  getNotifications,
+  markNotificationRead,
+  createAppeal,
+  getMyAppeals
 } = require('../controllers/userController');
 const { authenticate } = require('../middleware/auth');
 
 router.get('/profile', authenticate, getProfile);
+router.put('/profile', authenticate, updateProfile);
+router.put('/password', authenticate, changePassword);
 router.get('/questions', authenticate, getMyQuestions);
 router.get('/answers', authenticate, getMyAnswers);
 router.get('/favorites', authenticate, getMyFavorites);
