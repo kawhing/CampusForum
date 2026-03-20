@@ -4,20 +4,23 @@ const Question = require('../models/Question');
 const Comment = require('../models/Comment');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const { OFFENSIVE_CONTENT_PENALTY, containsBadWords, adjustUserTrust } = require('../utils/moderation');
 
-const BAD_WORDS = ['傻逼', '去死', 'fuck', 'shit', '滚', '垃圾', '操你', 'nt'].map((w) => w.toLowerCase());
 const MINUTES_PER_HOUR = 60;
 const MS_PER_MINUTE = 60 * 1000;
 const LOW_TRUST_ANSWER_COOLDOWN_MINUTES = 24 * MINUTES_PER_HOUR; // 1 day
 const VERY_LOW_TRUST_COOLDOWN_MINUTES = 48 * MINUTES_PER_HOUR; // 2 days
-const LOW_TRUST_THRESHOLD = 40;
-const VERY_LOW_TRUST_THRESHOLD = 20;
+const LOW_TRUST_THRESHOLD = 60;
+const VERY_LOW_TRUST_THRESHOLD = 50;
+const TRUST_BLOCK_THRESHOLD = 40;
 const ANONYMOUS_LABEL_PREFIX = '匿名回答者';
-const OFFENSIVE_CONTENT_PENALTY = 5;
 const VOTE_TRUST_WEIGHT_DIVISOR = 20;
 const MIN_VOTE_WEIGHT = 1;
 const AUTO_ACCEPT_LIKE_THRESHOLD = 10;
 const AUTO_ACCEPT_MESSAGE = '你的回答已因点赞数达到阈值被自动设为最佳答案';
+// 达到该点赞数后，优质回答可以帮助低信誉用户逐步恢复信誉
+const GOOD_ANSWER_LIKE_THRESHOLD = 3;
+const TRUST_RECOVERY_REWARD = 1;
 
 /**
  * Normalize an id-like value (ObjectId, string, number) into a string id.
@@ -51,20 +54,6 @@ const buildAuthorMeta = (createdBy) => ({
   ...extractAuthorStats(createdBy)
 });
 
-const containsBadWords = (text = '') => {
-  const lower = text.toLowerCase();
-  return BAD_WORDS.some((w) => lower.includes(w));
-};
-
-const adjustUserTrust = async (userId, delta) => {
-  if (!userId || delta === undefined || delta === null) return;
-  const user = await User.findById(userId).select('trustScore');
-  if (!user) return;
-  const current = typeof user.trustScore === 'number' ? user.trustScore : 0;
-  user.trustScore = Math.max(0, current + delta);
-  await user.save();
-};
-
 const createAnswer = async (req, res) => {
   try {
     const { questionId } = req.params;
@@ -89,6 +78,13 @@ const createAnswer = async (req, res) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
+    const responderTrust = typeof responder.trustScore === 'number' ? responder.trustScore : 0;
+    if (responderTrust < TRUST_BLOCK_THRESHOLD) {
+      return res.status(403).json({
+        message: `信誉分低于${TRUST_BLOCK_THRESHOLD}，暂时无法发表回答。请先浏览并点赞优质回答以逐步恢复信誉分。`
+      });
+    }
+
     const latestAnswer = await Answer.findOne({ createdBy: req.user._id })
       .sort({ createdAt: -1 })
       .select('createdAt');
@@ -96,9 +92,9 @@ const createAnswer = async (req, res) => {
     if (latestAnswer && latestAnswer.createdAt && !Number.isNaN(new Date(latestAnswer.createdAt).getTime())) {
       const minutesSinceLastAnswer = (Date.now() - new Date(latestAnswer.createdAt).getTime()) / MS_PER_MINUTE;
       let cooldownMinutes = 0;
-      if (responder.trustScore < VERY_LOW_TRUST_THRESHOLD) {
+      if (responderTrust < VERY_LOW_TRUST_THRESHOLD) {
         cooldownMinutes = VERY_LOW_TRUST_COOLDOWN_MINUTES;
-      } else if (responder.trustScore < LOW_TRUST_THRESHOLD) {
+      } else if (responderTrust < LOW_TRUST_THRESHOLD) {
         cooldownMinutes = LOW_TRUST_ANSWER_COOLDOWN_MINUTES;
       }
       if (cooldownMinutes > 0 && minutesSinceLastAnswer < cooldownMinutes) {
@@ -129,9 +125,7 @@ const createAnswer = async (req, res) => {
     }
 
     if (shouldHide) {
-      const updatedTrust = Math.max(0, (responder.trustScore || 0) - OFFENSIVE_CONTENT_PENALTY);
-      responder.trustScore = updatedTrust;
-      await responder.save();
+      await adjustUserTrust(responder._id, -OFFENSIVE_CONTENT_PENALTY);
     }
 
     if (!shouldHide && question.createdBy && question.createdBy.toString() !== req.user._id.toString()) {
@@ -376,6 +370,8 @@ const likeAnswer = async (req, res) => {
     const alreadyDisliked = answer.dislikedBy.some((uid) => uid.toString() === userId.toString());
     let trustDelta = 0;
 
+    const isNewLike = !alreadyLiked;
+
     if (alreadyLiked) {
       answer.likedBy = answer.likedBy.filter((uid) => uid.toString() !== userId.toString());
       answer.likes = Math.max(0, answer.likes - 1);
@@ -389,6 +385,24 @@ const likeAnswer = async (req, res) => {
       answer.likedBy.push(userId);
       answer.likes += 1;
       trustDelta += voteWeight;
+    }
+
+    const recoveryAlreadyGranted = (answer.trustRecoveryVoters || []).some(
+      (uid) => uid.toString() === userId.toString()
+    );
+    const qualifiesForRecovery =
+      isNewLike &&
+      voterTrust < TRUST_BLOCK_THRESHOLD &&
+      (answer.likes || 0) >= GOOD_ANSWER_LIKE_THRESHOLD &&
+      answer.createdBy &&
+      answer.createdBy.toString() !== userId.toString() &&
+      !recoveryAlreadyGranted;
+
+    if (qualifiesForRecovery) {
+      await adjustUserTrust(userId, TRUST_RECOVERY_REWARD);
+      answer.trustRecoveryVoters = Array.isArray(answer.trustRecoveryVoters)
+        ? [...answer.trustRecoveryVoters, userId]
+        : [userId];
     }
 
     await answer.save();
@@ -493,6 +507,11 @@ const createComment = async (req, res) => {
     const answer = await Answer.findById(id);
     if (!answer || answer.isDeleted) {
       return res.status(404).json({ message: 'Answer not found' });
+    }
+
+    if (containsBadWords(content)) {
+      await adjustUserTrust(req.user._id, -OFFENSIVE_CONTENT_PENALTY);
+      return res.status(400).json({ message: '评论内容包含不当用语，已扣除信誉分并阻止发布' });
     }
 
     const comment = new Comment({

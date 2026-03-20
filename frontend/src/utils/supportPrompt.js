@@ -1,8 +1,23 @@
-import { Modal, Typography } from 'antd';
+import { Modal, Typography, Button, Space, Tag } from 'antd';
 
 const { Paragraph, Text } = Typography;
 
-const SENSITIVE_KEYWORDS = ['心灰意冷', '自杀', '轻生', '暴力', '想死', '自残', '抑郁', '伤害自己'];
+const SENSITIVE_KEYWORDS = [
+  '心灰意冷',
+  '自杀',
+  '轻生',
+  '暴力',
+  '想死',
+  '自残',
+  '抑郁',
+  '伤害自己',
+  '跳楼',
+  '绝望',
+  '结束生命',
+  '不想活了',
+  '割腕',
+  '上吊'
+];
 
 export const findSensitiveKeyword = (text = '') => {
   const lower = text.toLowerCase();
@@ -17,17 +32,27 @@ export const ensureSupportPrompt = (text = '') =>
       return;
     }
 
-    Modal.confirm({
+    let instance = null;
+    const openSupport = () => {
+      window.open('/support', '_blank', 'noopener');
+    };
+
+    instance = Modal.confirm({
       title: '我们在这里支持你',
-      okText: '继续发布',
-      cancelText: '我暂时不需要',
-      width: 560,
+      okButtonProps: { style: { display: 'none' } },
+      cancelButtonProps: { style: { display: 'none' } },
+      closable: true,
+      width: 620,
+      onCancel: () => {
+        instance?.destroy?.();
+        resolve(false);
+      },
       content: (
-        <div>
+        <Space direction="vertical" style={{ width: '100%' }}>
           <Paragraph>
             系统检测到内容包含敏感词「{matched}」。如果你正经历情绪波动或需要帮助，请考虑联系以下渠道获取支持：
           </Paragraph>
-          <ul style={{ paddingLeft: 20, marginBottom: 12 }}>
+          <ul style={{ paddingLeft: 20, marginBottom: 8 }}>
             <li>
               <Text strong>校园心理中心 / 辅导员：</Text>
               <Text> 联系学校心理咨询中心或辅导员获取及时帮助。</Text>
@@ -42,11 +67,42 @@ export const ensureSupportPrompt = (text = '') =>
             </li>
           </ul>
           <Paragraph type="secondary" style={{ marginBottom: 0 }}>
-            如果你愿意继续发布，我们也会尽力为你提供资源和帮助。
+            如果你愿意继续发布，我们也会尽力为你提供资源和帮助。你也可以点击「接受援助」进入 AI 心理辅导页面，获得即时的情绪疏导建议。
           </Paragraph>
-        </div>
-      ),
-      onOk: () => resolve(true),
-      onCancel: () => resolve(false),
+          <Space style={{ justifyContent: 'flex-end', width: '100%', marginTop: 8 }}>
+            <Tag color="volcano" style={{ marginRight: 'auto' }}>
+              情绪支持
+            </Tag>
+            <Button
+              onClick={() => {
+                instance?.destroy?.();
+                resolve(false);
+              }}
+            >
+              我暂时不需要
+            </Button>
+            <Button
+              type="primary"
+              ghost
+              onClick={() => {
+                instance?.destroy?.();
+                openSupport();
+                resolve(false);
+              }}
+            >
+              接受援助
+            </Button>
+            <Button
+              type="primary"
+              onClick={() => {
+                instance?.destroy?.();
+                resolve(true);
+              }}
+            >
+              继续发布
+            </Button>
+          </Space>
+        </Space>
+      )
     });
   });
