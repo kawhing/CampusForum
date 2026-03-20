@@ -199,6 +199,22 @@ const createAppeal = async (req, res) => {
       return res.status(400).json({ message: 'Reason is required' });
     }
 
+    // 举报扣除被举报人的信任分
+    let targetOwnerId = null;
+    if (targetType === 'answer') {
+      const answer = await Answer.findById(targetId).select('createdBy');
+      targetOwnerId = answer?.createdBy;
+    } else if (targetType === 'question') {
+      const question = await Question.findById(targetId).select('createdBy');
+      targetOwnerId = question?.createdBy;
+    }
+    if (targetOwnerId) {
+      await User.updateOne(
+        { _id: targetOwnerId },
+        { $inc: { trustScore: -2 }, $max: { trustScore: 0 } }
+      );
+    }
+
     const appeal = new Appeal({
       userId: req.user._id,
       targetId,

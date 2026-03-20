@@ -81,7 +81,7 @@ const acceptAnswer = async (req, res) => {
     // 奖励答主互助值与信任分
     if (answer.createdBy) {
       await User.findByIdAndUpdate(answer.createdBy._id || answer.createdBy, {
-        $inc: { trustScore: 2, helpValue: 1 }
+        $inc: { trustScore: 1, helpValue: 1 }
       });
       await Notification.create({
         userId: answer.createdBy._id || answer.createdBy,

@@ -106,6 +106,10 @@ function UserInfoCard({ user }) {
             <Tag color={roleInfo.color}>{roleInfo.label}</Tag>
           </Space>
           <Text type="secondary">{user.email}</Text>
+          <Space size="middle">
+            <Text type="secondary">信任分：</Text>
+            <Tag color="blue">{user.trustScore ?? 0}</Tag>
+          </Space>
           <Text type="secondary" style={{ fontSize: 12 }}>
             注册时间：
             {user.createdAt
