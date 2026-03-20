@@ -103,4 +103,22 @@ export const getAppeals = () => api.get('/admin/appeals');
 export const resolveAppeal = (id, data) => api.put(`/admin/appeals/${id}`, data);
 export const getAdminStats = () => api.get('/admin/stats');
 
+// Chat
+export const listChatRooms = (params) => api.get('/chat/rooms', { params });
+export const createChatRoom = (data) => api.post('/chat/rooms', data);
+export const joinChatRoom = (id, data) => api.post(`/chat/rooms/${id}/join`, data);
+export const leaveChatRoom = (id) => api.delete(`/chat/rooms/${id}/leave`);
+export const getChatRoomMessages = (id, params) =>
+  api.get(`/chat/rooms/${id}/messages`, { params });
+export const sendChatRoomMessage = (id, data) => api.post(`/chat/rooms/${id}/messages`, data);
+export const getChatRoomMembers = (id) => api.get(`/chat/rooms/${id}/members`);
+
+export const requestFriend = (data) => api.post('/chat/friends/request', data);
+export const respondFriend = (id, data) => api.post(`/chat/friends/${id}/respond`, data);
+export const listFriends = () => api.get('/chat/friends');
+export const getFriendMessages = (friendId, params) =>
+  api.get(`/chat/friends/${friendId}/messages`, { params });
+export const sendFriendMessage = (friendId, data) =>
+  api.post(`/chat/friends/${friendId}/messages`, data);
+
 export default api;
