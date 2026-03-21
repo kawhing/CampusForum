@@ -504,7 +504,7 @@ const createComment = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid answer ID' });
     }
-    const { content } = req.body;
+    const { content, parentCommentId } = req.body;
     if (!content || !content.trim()) {
       return res.status(400).json({ message: 'Content is required' });
     }
@@ -531,9 +531,25 @@ const createComment = async (req, res) => {
       return res.status(400).json({ message: '评论内容包含不当用语，已扣除信誉分并阻止发布' });
     }
 
+    let parentComment = null;
+    if (parentCommentId) {
+      if (!mongoose.Types.ObjectId.isValid(parentCommentId)) {
+        return res.status(400).json({ message: 'Invalid parent comment ID' });
+      }
+      parentComment = await Comment.findOne({
+        _id: parentCommentId,
+        answerId: id,
+        isDeleted: false
+      });
+      if (!parentComment) {
+        return res.status(400).json({ message: 'Parent comment not found' });
+      }
+    }
+
     const comment = new Comment({
       content: content.trim(),
       answerId: id,
+      parentCommentId: parentComment ? parentComment._id : null,
       createdBy: req.user._id
     });
     await comment.save();
@@ -577,6 +593,7 @@ const getComments = async (req, res) => {
         id: normalizeId(rest._id),
         content: rest.content,
         answerId: rest.answerId,
+        parentCommentId: normalizeId(rest.parentCommentId),
         createdAt: rest.createdAt,
         isDeleted: rest.isDeleted
       };

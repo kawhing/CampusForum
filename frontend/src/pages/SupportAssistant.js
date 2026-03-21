@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Card, Typography, Space, Button, Input, Tag, Alert, Timeline, Divider } from 'antd';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Card, Typography, Space, Button, Input, Tag, Alert, Timeline, Divider, message } from 'antd';
 import {
   HeartTwoTone,
   SafetyCertificateTwoTone,
@@ -7,7 +7,8 @@ import {
   ThunderboltTwoTone,
   SmileTwoTone
 } from '@ant-design/icons';
-import { findSensitiveKeyword } from '../utils/supportPrompt';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { consumeSupportAccess, findSensitiveKeyword } from '../utils/supportPrompt';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -45,6 +46,12 @@ const supportiveReply = (text) => {
 };
 
 export default function SupportAssistant() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [accessInfo] = useState(() => {
+    const token = searchParams.get('token');
+    return token ? consumeSupportAccess(token) : null;
+  });
   const [messages, setMessages] = useState([
     {
       from: 'assistant',
@@ -62,6 +69,17 @@ export default function SupportAssistant() {
       })),
     []
   );
+
+  useEffect(() => {
+    if (!accessInfo) {
+      message.warning('请在触发敏感词检测后进入心理援助页面。');
+      navigate('/', { replace: true });
+    }
+  }, [accessInfo, navigate]);
+
+  if (!accessInfo) {
+    return null;
+  }
 
   const sendMessage = () => {
     if (!input.trim()) return;

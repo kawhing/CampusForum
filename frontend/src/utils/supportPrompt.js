@@ -19,9 +19,48 @@ const SENSITIVE_KEYWORDS = [
   '上吊'
 ];
 
+const SUPPORT_ACCESS_STORAGE_KEY = 'support-access';
+const SUPPORT_ACCESS_TTL_MS = 5 * 60 * 1000;
+
 export const findSensitiveKeyword = (text = '') => {
   const lower = text.toLowerCase();
   return SENSITIVE_KEYWORDS.find((kw) => lower.includes(kw.toLowerCase()));
+};
+
+const createSupportAccess = (keyword) => {
+  if (typeof window === 'undefined') return null;
+  const token =
+    window.crypto?.randomUUID?.() ||
+    (() => {
+      const bytes = new Uint8Array(16);
+      window.crypto?.getRandomValues?.(bytes);
+      return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    })();
+  const payload = { token, keyword, issuedAt: Date.now() };
+  try {
+    window.localStorage.setItem(SUPPORT_ACCESS_STORAGE_KEY, JSON.stringify(payload));
+  } catch (_) {
+    return null;
+  }
+  return payload;
+};
+
+export const consumeSupportAccess = (token) => {
+  if (!token || typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(SUPPORT_ACCESS_STORAGE_KEY);
+    if (!raw) return null;
+    const payload = JSON.parse(raw);
+    window.localStorage.removeItem(SUPPORT_ACCESS_STORAGE_KEY);
+    if (!payload || payload.token !== token) return null;
+    if (!payload.issuedAt || Date.now() - payload.issuedAt > SUPPORT_ACCESS_TTL_MS) {
+      return null;
+    }
+    return payload;
+  } catch (_) {
+    window.localStorage.removeItem(SUPPORT_ACCESS_STORAGE_KEY);
+    return null;
+  }
 };
 
 export const ensureSupportPrompt = (text = '') =>
@@ -34,7 +73,10 @@ export const ensureSupportPrompt = (text = '') =>
 
     let instance = null;
     const openSupport = () => {
-      window.open('/support', '_blank', 'noopener,noreferrer');
+      const payload = createSupportAccess(matched);
+      const token = payload?.token;
+      const url = token ? `/support?token=${encodeURIComponent(token)}` : '/support';
+      window.open(url, '_blank', 'noopener,noreferrer');
     };
 
     instance = Modal.confirm({
