@@ -29,7 +29,13 @@ export const findSensitiveKeyword = (text = '') => {
 
 const createSupportAccess = (keyword) => {
   if (typeof window === 'undefined') return null;
-  const token = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  const token =
+    window.crypto?.randomUUID?.() ||
+    (() => {
+      const bytes = new Uint8Array(16);
+      window.crypto?.getRandomValues?.(bytes);
+      return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    })();
   const payload = { token, keyword, issuedAt: Date.now() };
   try {
     window.localStorage.setItem(SUPPORT_ACCESS_STORAGE_KEY, JSON.stringify(payload));
