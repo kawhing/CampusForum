@@ -34,6 +34,7 @@ import {
   UserOutlined,
   ClockCircleOutlined,
   EyeOutlined,
+  FlagOutlined,
 } from '@ant-design/icons';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -50,6 +51,7 @@ import {
   getComments,
   createComment,
   deleteComment,
+  createAppeal,
 } from '../api';
 import { ensureSupportPrompt } from '../utils/supportPrompt';
 import { getAuthorDisplayName } from '../utils/questionOwner';
@@ -70,6 +72,9 @@ function CommentSection({ answerId, currentUser }) {
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [replyTarget, setReplyTarget] = useState(null);
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportReason, setReportReason] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
   const viewerId = currentUser?.id || currentUser?._id;
 
@@ -150,6 +155,22 @@ function CommentSection({ answerId, currentUser }) {
     }
   };
 
+  const handleReportComment = async () => {
+    if (!reportReason.trim()) return message.warning('请填写举报原因');
+    setReportSubmitting(true);
+    try {
+      const commentId = reportTarget?.id || reportTarget?._id;
+      await createAppeal({ targetId: commentId, targetType: 'comment', reason: reportReason });
+      message.success('举报已提交');
+      setReportTarget(null);
+      setReportReason('');
+    } catch (err) {
+      message.error(err.response?.data?.message || '举报失败');
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
   const renderComment = (comment, depth = 0) => {
     const authorId = comment.authorId || comment.author?.id || comment.author?._id;
     const isOwner = viewerId && authorId && viewerId.toString() === authorId.toString();
@@ -199,6 +220,16 @@ function CommentSection({ answerId, currentUser }) {
                   回复
                 </Button>
               )}
+              {currentUser && !isOwner && (
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<FlagOutlined />}
+                  onClick={() => { setReportTarget(comment); setReportReason(''); }}
+                >
+                  举报
+                </Button>
+              )}
               {(isOwner || isAdmin) && (
                 <Button
                   type="link"
@@ -219,6 +250,23 @@ function CommentSection({ answerId, currentUser }) {
 
   return (
     <div style={{ marginTop: 8 }}>
+      <Modal
+        title="举报评论"
+        open={!!reportTarget}
+        onOk={handleReportComment}
+        onCancel={() => { setReportTarget(null); setReportReason(''); }}
+        okText="提交举报"
+        cancelText="取消"
+        confirmLoading={reportSubmitting}
+      >
+        <TextArea
+          placeholder="请描述举报原因（如：违规内容、骚扰等）"
+          value={reportReason}
+          onChange={(e) => setReportReason(e.target.value)}
+          rows={3}
+          maxLength={500}
+        />
+      </Modal>
       <Spin spinning={loading}>
         {commentTree.length === 0 ? (
           <Text type="secondary">暂无评论</Text>
@@ -267,6 +315,9 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId, accepted
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(answer.content);
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const [reportVisible, setReportVisible] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
   const answerId = answer.id || answer._id;
   const isOwner =
@@ -280,6 +331,7 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId, accepted
 
   const handleLike = async () => {
     if (!currentUser) return message.warning('请先登录');
+    if (isOwner) return message.warning('不能给自己的回答点赞');
     try {
       await likeAnswer(answerId);
       setLiked((v) => !v);
@@ -295,6 +347,7 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId, accepted
 
   const handleDislike = async () => {
     if (!currentUser) return message.warning('请先登录');
+    if (isOwner) return message.warning('不能给自己的回答点踩');
     try {
       await dislikeAnswer(answerId);
       setDisliked((v) => !v);
@@ -355,7 +408,40 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId, accepted
     });
   };
 
+  const handleReport = async () => {
+    if (!reportReason.trim()) return message.warning('请填写举报原因');
+    setReportSubmitting(true);
+    try {
+      await createAppeal({ targetId: answerId, targetType: 'answer', reason: reportReason });
+      message.success('举报已提交');
+      setReportVisible(false);
+      setReportReason('');
+    } catch (err) {
+      message.error(err.response?.data?.message || '举报失败');
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
   return (
+    <>
+    <Modal
+      title="举报回答"
+      open={reportVisible}
+      onOk={handleReport}
+      onCancel={() => { setReportVisible(false); setReportReason(''); }}
+      okText="提交举报"
+      cancelText="取消"
+      confirmLoading={reportSubmitting}
+    >
+      <TextArea
+        placeholder="请描述举报原因（如：违规内容、骚扰等）"
+        value={reportReason}
+        onChange={(e) => setReportReason(e.target.value)}
+        rows={3}
+        maxLength={500}
+      />
+    </Modal>
     <Card
       style={{
         marginBottom: 16,
@@ -457,28 +543,34 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId, accepted
       <Row justify="space-between" align="middle">
         <Col>
           <Space size="middle">
-            <Button
-              type="text"
-              size="small"
-              icon={liked ? <LikeFilled style={{ color: '#1890ff' }} /> : <LikeOutlined />}
-              onClick={handleLike}
-            >
-              {likeCount}
-            </Button>
-            <Button
-              type="text"
-              size="small"
-              icon={
-                disliked ? (
-                  <DislikeFilled style={{ color: '#ff4d4f' }} />
-                ) : (
-                  <DislikeOutlined />
-                )
-              }
-              onClick={handleDislike}
-            >
-              {dislikeCount}
-            </Button>
+            <Tooltip title={isOwner ? '不能给自己的回答点赞' : ''}>
+              <Button
+                type="text"
+                size="small"
+                icon={liked ? <LikeFilled style={{ color: '#1890ff' }} /> : <LikeOutlined />}
+                onClick={handleLike}
+                disabled={isOwner}
+              >
+                {likeCount}
+              </Button>
+            </Tooltip>
+            <Tooltip title={isOwner ? '不能给自己的回答点踩' : ''}>
+              <Button
+                type="text"
+                size="small"
+                icon={
+                  disliked ? (
+                    <DislikeFilled style={{ color: '#ff4d4f' }} />
+                  ) : (
+                    <DislikeOutlined />
+                  )
+                }
+                onClick={handleDislike}
+                disabled={isOwner}
+              >
+                {dislikeCount}
+              </Button>
+            </Tooltip>
             <Button
               type="text"
               size="small"
@@ -501,6 +593,16 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId, accepted
             >
               {answer.commentCount || 0} 评论
             </Button>
+            {currentUser && !isOwner && (
+              <Button
+                type="text"
+                size="small"
+                icon={<FlagOutlined />}
+                onClick={() => { setReportVisible(true); setReportReason(''); }}
+              >
+                举报
+              </Button>
+            )}
           </Space>
         </Col>
       </Row>
@@ -512,6 +614,7 @@ function AnswerCard({ answer, currentUser, onRefresh, questionAuthorId, accepted
         </>
       )}
     </Card>
+    </>
   );
 }
 

@@ -364,6 +364,10 @@ const likeAnswer = async (req, res) => {
     }
 
     const userId = req.user._id;
+    if (answer.createdBy && answer.createdBy.toString() === userId.toString()) {
+      return res.status(403).json({ message: '不能给自己的回答点赞' });
+    }
+
     const voter = await User.findById(userId).select('trustScore');
     const voterTrust = voter?.trustScore || 0;
     const voteWeight = Math.max(MIN_VOTE_WEIGHT, Math.floor(voterTrust / VOTE_TRUST_WEIGHT_DIVISOR));
@@ -458,6 +462,10 @@ const dislikeAnswer = async (req, res) => {
     }
 
     const userId = req.user._id;
+    if (answer.createdBy && answer.createdBy.toString() === userId.toString()) {
+      return res.status(403).json({ message: '不能给自己的回答点踩' });
+    }
+
     const voter = await User.findById(userId).select('trustScore');
     const voterTrust = voter?.trustScore || 0;
     const voteWeight = Math.max(MIN_VOTE_WEIGHT, Math.floor(voterTrust / VOTE_TRUST_WEIGHT_DIVISOR));
