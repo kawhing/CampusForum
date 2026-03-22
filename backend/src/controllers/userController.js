@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const Question = require('../models/Question');
 const Answer = require('../models/Answer');
+const Comment = require('../models/Comment');
 const Notification = require('../models/Notification');
 const Appeal = require('../models/Appeal');
 const User = require('../models/User');
@@ -192,14 +193,14 @@ const createAppeal = async (req, res) => {
     if (!targetId || !mongoose.Types.ObjectId.isValid(targetId)) {
       return res.status(400).json({ message: 'Valid targetId is required' });
     }
-    if (!targetType || !['question', 'answer', 'account'].includes(targetType)) {
-      return res.status(400).json({ message: 'Valid targetType is required (question, answer, account)' });
+    if (!targetType || !['question', 'answer', 'comment', 'account'].includes(targetType)) {
+      return res.status(400).json({ message: 'Valid targetType is required (question, answer, comment, account)' });
     }
     if (!reason || !reason.trim()) {
       return res.status(400).json({ message: 'Reason is required' });
     }
 
-    // 举报扣除被举报人的信任分
+    // 验证被举报内容存在，并立即自动扣除被举报人信誉分
     let targetOwnerId = null;
     if (targetType === 'answer') {
       const answer = await Answer.findById(targetId).select('createdBy isDeleted').lean();
@@ -213,14 +214,18 @@ const createAppeal = async (req, res) => {
         return res.status(404).json({ message: 'Reported question not found' });
       }
       targetOwnerId = question.createdBy;
+    } else if (targetType === 'comment') {
+      const comment = await Comment.findById(targetId).select('createdBy isDeleted').lean();
+      if (!comment || comment.isDeleted) {
+        return res.status(404).json({ message: 'Reported comment not found' });
+      }
+      targetOwnerId = comment.createdBy;
     }
     if (targetOwnerId) {
       await User.findByIdAndUpdate(targetOwnerId, [
         {
           $set: {
-            trustScore: {
-              $max: [{ $subtract: ['$trustScore', 2] }, 0]
-            }
+            trustScore: { $max: [{ $subtract: ['$trustScore', 2] }, 0] }
           }
         }
       ]);
@@ -230,6 +235,7 @@ const createAppeal = async (req, res) => {
       userId: req.user._id,
       targetId,
       targetType,
+      targetOwnerId: targetOwnerId || undefined,
       reason: reason.trim(),
       evidenceText: evidenceText?.trim(),
       evidenceUrls: Array.isArray(evidenceUrls) ? evidenceUrls : undefined

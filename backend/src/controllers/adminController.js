@@ -323,7 +323,7 @@ const resolveAppeal = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: 'Invalid appeal ID' });
     }
-    const { status, adminResponse, evidenceText, evidenceUrls } = req.body;
+    const { status, adminResponse, evidenceText, evidenceUrls, muteDays } = req.body;
     const reason = (req.body.reason || '').trim();
     if (!status || !['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'Status must be approved or rejected' });
@@ -350,6 +350,28 @@ const resolveAppeal = async (req, res) => {
       targetType: 'appeal',
       reason
     });
+
+    // 管理员介入：如需禁言，在批准申诉时设置 mutedUntil（信誉分已在举报提交时自动扣除）
+    if (status === 'approved' && appeal.targetOwnerId) {
+      const parsedMuteDays = muteDays !== undefined ? parseInt(muteDays, 10) : 0;
+      if (!Number.isFinite(parsedMuteDays) || parsedMuteDays < 0 || parsedMuteDays > 365) {
+        return res.status(400).json({ message: 'muteDays must be an integer between 0 and 365' });
+      }
+      const muteMs = parsedMuteDays > 0 ? parsedMuteDays * 24 * 60 * 60 * 1000 : 0;
+
+      if (muteMs > 0) {
+        await User.findByIdAndUpdate(appeal.targetOwnerId, {
+          mutedUntil: new Date(Date.now() + muteMs)
+        });
+
+        await Notification.create({
+          userId: appeal.targetOwnerId,
+          message: `您的内容举报已被管理员确认，被禁言 ${parsedMuteDays} 天。管理员说明：${adminResponse || reason}`,
+          type: 'appeal_result',
+          relatedId: appeal._id
+        });
+      }
+    }
 
     await Notification.create({
       userId: appeal.userId,

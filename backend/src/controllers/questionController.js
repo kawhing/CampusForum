@@ -55,6 +55,10 @@ const createQuestion = async (req, res) => {
 
     // 低信任度冷却
     const creator = await User.findById(req.user._id);
+    if (creator && creator.mutedUntil && creator.mutedUntil > new Date()) {
+      const until = creator.mutedUntil.toLocaleDateString('zh-CN');
+      return res.status(403).json({ message: `您已被禁言至 ${until}，期间无法发帖。` });
+    }
     if (creator && creator.trustScore < MIN_TRUST_FOR_COOLDOWN) {
       const lastQuestion = await Question.findOne({ createdBy: req.user._id }).sort({ createdAt: -1 });
       if (lastQuestion && Date.now() - lastQuestion.createdAt.getTime() < LOW_TRUST_COOLDOWN_MINUTES * 60 * 1000) {

@@ -12,6 +12,7 @@ const UserSchema = new mongoose.Schema({
   helpValue: { type: Number, default: 0, min: 0 },
   isBlocked: { type: Boolean, default: false },
   blockReason: { type: String },
+  mutedUntil: { type: Date },
   activeToken: { type: String },
   createdAt: { type: Date, default: Date.now },
   favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Answer' }]
