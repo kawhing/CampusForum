@@ -200,7 +200,7 @@ const createAppeal = async (req, res) => {
       return res.status(400).json({ message: 'Reason is required' });
     }
 
-    // 举报扣除被举报人的信任分
+    // 验证被举报内容存在，并立即自动扣除被举报人信誉分
     let targetOwnerId = null;
     if (targetType === 'answer') {
       const answer = await Answer.findById(targetId).select('createdBy isDeleted').lean();
@@ -225,9 +225,7 @@ const createAppeal = async (req, res) => {
       await User.findByIdAndUpdate(targetOwnerId, [
         {
           $set: {
-            trustScore: {
-              $max: [{ $subtract: ['$trustScore', 2] }, 0]
-            }
+            trustScore: { $max: [{ $subtract: ['$trustScore', 2] }, 0] }
           }
         }
       ]);
@@ -237,6 +235,7 @@ const createAppeal = async (req, res) => {
       userId: req.user._id,
       targetId,
       targetType,
+      targetOwnerId: targetOwnerId || undefined,
       reason: reason.trim(),
       evidenceText: evidenceText?.trim(),
       evidenceUrls: Array.isArray(evidenceUrls) ? evidenceUrls : undefined

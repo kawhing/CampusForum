@@ -87,6 +87,11 @@ const createAnswer = async (req, res) => {
       });
     }
 
+    if (responder.mutedUntil && responder.mutedUntil > new Date()) {
+      const until = responder.mutedUntil.toLocaleDateString('zh-CN');
+      return res.status(403).json({ message: `您已被禁言至 ${until}，期间无法发表回答。` });
+    }
+
     const latestAnswer = await Answer.findOne({ createdBy: req.user._id })
       .sort({ createdAt: -1 })
       .select('createdAt');
@@ -532,6 +537,11 @@ const createComment = async (req, res) => {
       return res.status(403).json({
         message: `信任分数低于${TRUST_BLOCK_THRESHOLD}，暂时无法发表评论。请先浏览并点赞优质回答以逐步提升信任分数。`
       });
+    }
+
+    if (req.user.mutedUntil && req.user.mutedUntil > new Date()) {
+      const until = req.user.mutedUntil.toLocaleDateString('zh-CN');
+      return res.status(403).json({ message: `您已被禁言至 ${until}，期间无法发表评论。` });
     }
 
     if (containsBadWords(content)) {

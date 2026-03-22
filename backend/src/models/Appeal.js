@@ -4,6 +4,7 @@ const AppealSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   targetId: { type: mongoose.Schema.Types.ObjectId, required: true },
   targetType: { type: String, enum: ['question', 'answer', 'comment', 'account'], required: true },
+  targetOwnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   reason: { type: String, required: true },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   adminResponse: { type: String },

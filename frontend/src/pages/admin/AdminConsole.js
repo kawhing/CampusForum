@@ -13,6 +13,7 @@ import {
   Modal,
   Form,
   Input,
+  InputNumber,
   Select,
   message,
   Spin,
@@ -704,7 +705,11 @@ function AppealManagement() {
     try {
       await resolveAppeal(a.id || a._id, {
         status: resolveModal.action,
-        response: values.response,
+        reason: values.response,
+        adminResponse: values.response,
+        ...(resolveModal.action === 'approved' && values.muteDays > 0
+          ? { muteDays: values.muteDays }
+          : {}),
       });
       message.success('申诉已处理');
       setResolveModal({ visible: false, appeal: null, action: null });
@@ -793,7 +798,7 @@ function AppealManagement() {
       />
 
       <Modal
-        title={resolveModal.action === 'approved' ? '批准申诉' : '拒绝申诉'}
+        title={resolveModal.action === 'approved' ? '批准举报' : '驳回举报'}
         open={resolveModal.visible}
         onCancel={() => { setResolveModal({ visible: false, appeal: null, action: null }); resolveForm.resetFields(); }}
         footer={null}
@@ -801,11 +806,20 @@ function AppealManagement() {
         <Form form={resolveForm} layout="vertical" onFinish={handleResolve}>
           <Form.Item
             name="response"
-            label="回复内容"
-            rules={[{ required: true, message: '请输入回复内容' }]}
+            label="处理说明"
+            rules={[{ required: true, message: '请输入处理说明' }]}
           >
-            <TextArea placeholder="请输入给申诉人的回复..." autoSize={{ minRows: 3 }} />
+            <TextArea placeholder="请输入处理说明..." autoSize={{ minRows: 3 }} />
           </Form.Item>
+          {resolveModal.action === 'approved' && (
+            <Form.Item
+              name="muteDays"
+              label="禁言天数（0 表示不禁言）"
+              initialValue={0}
+            >
+              <InputNumber min={0} max={365} style={{ width: '100%' }} placeholder="输入禁言天数，0 表示不禁言" />
+            </Form.Item>
+          )}
           <Form.Item>
             <Space>
               <Button
@@ -813,7 +827,7 @@ function AppealManagement() {
                 htmlType="submit"
                 danger={resolveModal.action === 'rejected'}
               >
-                确认{resolveModal.action === 'approved' ? '批准' : '拒绝'}
+                确认{resolveModal.action === 'approved' ? '批准' : '驳回'}
               </Button>
               <Button onClick={() => { setResolveModal({ visible: false, appeal: null, action: null }); resolveForm.resetFields(); }}>取消</Button>
             </Space>
