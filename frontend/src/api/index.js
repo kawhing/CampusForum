@@ -104,6 +104,12 @@ export const getAppeals = () => api.get('/admin/appeals');
 export const resolveAppeal = (id, data) => api.put(`/admin/appeals/${id}`, data);
 export const getAdminStats = () => api.get('/admin/stats');
 
+// AI
+export const getAiStatus = () => api.get('/ai/status');
+export const chatWithAi = (data) => api.post('/ai/chat', data);
+export const getAiSettings = () => api.get('/ai/settings');
+export const updateAiSettings = (data) => api.put('/ai/settings', data);
+
 // Chat
 export const listChatRooms = (params) => api.get('/chat/rooms', { params });
 export const createChatRoom = (data) => api.post('/chat/rooms', data);

@@ -8,7 +8,8 @@ import {
   SmileTwoTone
 } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { consumeSupportAccess, findSensitiveKeyword } from '../utils/supportPrompt';
+import { consumeSupportAccess } from '../utils/supportPrompt';
+import { chatWithAi, getAiStatus } from '../api';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -26,24 +27,7 @@ const CONTACTS = [
   { label: '紧急情况', value: '请立即联系身边可信任的人或当地紧急救援电话。' }
 ];
 
-const SIMULATED_TYPING_DELAY_MS = 150; // 模拟思考/打字延迟，避免瞬时刷屏
-
-const supportiveReply = (text) => {
-  const keyword = findSensitiveKeyword(text);
-  if (!text.trim()) {
-    return '我在这里倾听你。写下此刻的感受，有助于我们一起找到舒缓的方法。';
-  }
-  if (keyword) {
-    return `我感受到你提到了「${keyword}」，这听起来很沉重。你可以先确保自己处于安全的环境，并尝试联系可信任的人。若方便，请考虑拨打 12320 或学校心理中心，我们也会继续陪伴你。`;
-  }
-  if (text.length > 120) {
-    return '谢谢你愿意详细分享。长文表达很不容易，先深呼吸几次，让自己有一点缓冲。我们可以一起拆分问题，找到当下最需要的一个小行动。';
-  }
-  if (text.includes('压力') || text.includes('焦虑')) {
-    return '听起来压力让你很难受。把任务分解成最小的一步，完成它并给自己一个肯定，也可以试着离开座位散步 5 分钟。';
-  }
-  return '收到你的信息了，我会一直在线。试着把你此刻最需要的支持写下来，我们可以一起排个优先级。';
-};
+const SUPPORT_MODE = 'support';
 
 export default function SupportAssistant() {
   const [searchParams] = useSearchParams();
@@ -60,6 +44,7 @@ export default function SupportAssistant() {
   ]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(true);
 
   const timelineItems = useMemo(
     () =>
@@ -77,22 +62,47 @@ export default function SupportAssistant() {
     }
   }, [accessInfo, navigate]);
 
+  useEffect(() => {
+    getAiStatus()
+      .then((res) => setAiEnabled(res.data?.enabled !== false))
+      .catch(() => {});
+  }, []);
+
   if (!accessInfo) {
     return null;
   }
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
+  const sendMessage = async () => {
+    if (!input.trim() || sending) return;
+    if (!aiEnabled) {
+      message.warning('AI 服务当前不可用，请稍后再试。');
+      return;
+    }
     const userText = input.trim();
+    const history = messages.map((msg) => ({ role: msg.from, content: msg.text }));
     setSending(true);
     setMessages((prev) => [...prev, { from: 'user', text: userText }]);
-
-    const reply = supportiveReply(userText);
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { from: 'assistant', text: reply }]);
-      setSending(false);
-    }, SIMULATED_TYPING_DELAY_MS);
     setInput('');
+    try {
+      const res = await chatWithAi({ message: userText, mode: SUPPORT_MODE, history });
+      const reply = res.data?.reply || 'AI 暂时无法回应，请稍后再试。';
+      setMessages((prev) => [...prev, { from: 'assistant', text: reply }]);
+    } catch (err) {
+      const status = err.response?.status;
+      if (status === 503) {
+        setAiEnabled(false);
+      }
+      message.error(err.response?.data?.message || 'AI 服务暂不可用');
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: 'assistant',
+          text: 'AI 服务暂不可用。建议先联系身边可信任的人或心理援助热线，我们也会继续为你提供资源。'
+        }
+      ]);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -128,10 +138,18 @@ export default function SupportAssistant() {
         </Card>
 
         <Card
-          title="即时情绪支持 (AI 心理辅导体验版)"
+          title="即时情绪支持 (AI 心理辅导)"
           extra={<MessageTwoTone twoToneColor="#6366f1" />}
           bodyStyle={{ padding: 0 }}
         >
+          {!aiEnabled && (
+            <Alert
+              type="warning"
+              showIcon
+              message="AI 服务当前已关闭或不可用，将继续显示紧急支持信息。"
+              style={{ margin: '16px 16px 0' }}
+            />
+          )}
           <div style={{ maxHeight: 360, overflowY: 'auto', padding: 16, background: '#fafafa' }}>
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
               {messages.map((msg, idx) => (
