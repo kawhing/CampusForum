@@ -57,8 +57,8 @@ import {
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
-const AI_TIMEOUT_MIN = 1000;
-const AI_TIMEOUT_MAX = 120000;
+const AI_TIMEOUT_MS_MIN = 1000;
+const AI_TIMEOUT_MS_MAX = 120000;
 
 function StatsOverview() {
   const [stats, setStats] = useState(null);
@@ -993,7 +993,7 @@ function AiSettingsPanel() {
             <Input placeholder="llama3" />
           </Form.Item>
           <Form.Item label="超时 (ms)" name="timeoutMs">
-            <InputNumber min={AI_TIMEOUT_MIN} max={AI_TIMEOUT_MAX} style={{ width: '100%' }} />
+            <InputNumber min={AI_TIMEOUT_MS_MIN} max={AI_TIMEOUT_MS_MAX} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item label="普通问答系统提示词" name="systemPromptGeneral">
             <TextArea rows={3} placeholder="AI 回答普通问题时的系统提示词" />

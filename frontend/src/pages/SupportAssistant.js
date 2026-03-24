@@ -98,7 +98,7 @@ export default function SupportAssistant() {
         ...prev,
         {
           from: 'assistant',
-          text: 'AI 服务暂不可用。建议先联系身边可信任的人或心理援助热线，我们也会继续为你提供资源。'
+          text: 'AI 服务暂不可用，请稍后再试。'
         }
       ]);
     } finally {

@@ -6,7 +6,7 @@ const MAX_HISTORY_ITEMS = 6;
 const MIN_TIMEOUT_MS = 1000;
 const MAX_TIMEOUT_MS = 120000;
 
-const sanitizeBaseUrl = (value) => {
+const normalizeBaseUrl = (value) => {
   if (!value) return '';
   return value.trim().replace(/\/+$/, '');
 };
@@ -59,7 +59,7 @@ const updateAiSettings = async (req, res) => {
     });
 
     if (updates.baseUrl !== undefined) {
-      const trimmed = sanitizeBaseUrl(String(updates.baseUrl || ''));
+      const trimmed = normalizeBaseUrl(String(updates.baseUrl || ''));
       if (trimmed && !/^https?:\/\//i.test(trimmed)) {
         return res.status(400).json({ message: 'baseUrl 必须以 http/https 开头' });
       }
@@ -121,7 +121,7 @@ const chatWithAi = async (req, res) => {
       return res.status(503).json({ message: 'AI 功能已由管理员关闭' });
     }
 
-    const baseUrl = sanitizeBaseUrl(settings.baseUrl);
+    const baseUrl = normalizeBaseUrl(settings.baseUrl);
     if (!baseUrl) {
       return res.status(500).json({ message: 'AI 服务地址未配置' });
     }
@@ -140,7 +140,7 @@ const chatWithAi = async (req, res) => {
     ];
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), settings.timeoutMs || 20000);
+    const timeout = setTimeout(() => controller.abort(), settings.timeoutMs);
     let response;
     try {
       response = await fetch(`${baseUrl}/api/chat`, {
