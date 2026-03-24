@@ -14,6 +14,7 @@ import { RobotOutlined, SmileTwoTone, ThunderboltTwoTone, HeartTwoTone } from '@
 import { chatWithAi, getAiStatus } from '../api';
 import { findSensitiveKeyword } from '../utils/supportPrompt';
 import { buildAiHistory } from '../utils/aiHistory';
+import { AI_FALLBACK_REPLY } from '../utils/aiMessages';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -23,7 +24,6 @@ const SUPPORT_CONTACTS = [
   { label: '紧急情况', value: '请立即联系身边可信任的人或当地紧急救援电话。' }
 ];
 
-const AI_FALLBACK_REPLY = 'AI 服务暂不可用，请稍后再试。';
 
 export default function AiAssistant() {
   const [messages, setMessages] = useState([

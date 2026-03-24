@@ -11,6 +11,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { consumeSupportAccess } from '../utils/supportPrompt';
 import { chatWithAi, getAiStatus } from '../api';
 import { buildAiHistory } from '../utils/aiHistory';
+import { AI_FALLBACK_REPLY } from '../utils/aiMessages';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -29,7 +30,6 @@ const CONTACTS = [
 ];
 
 const SUPPORT_MODE = 'support';
-const AI_FALLBACK_REPLY = 'AI 服务暂不可用，请稍后再试。';
 
 export default function SupportAssistant() {
   const [searchParams] = useSearchParams();
