@@ -59,6 +59,7 @@ const { Title, Text } = Typography;
 const { TextArea } = Input;
 const AI_TIMEOUT_MS_MIN = 1000;
 const AI_TIMEOUT_MS_MAX = 120000;
+const DEFAULT_AI_ENABLED = true;
 
 function StatsOverview() {
   const [stats, setStats] = useState(null);
@@ -926,7 +927,7 @@ function AiSettingsPanel() {
       .then((res) => {
         const settings = res.data?.settings || res.data;
         form.setFieldsValue({
-          enabled: settings?.enabled ?? true,
+          enabled: typeof settings?.enabled === 'boolean' ? settings.enabled : DEFAULT_AI_ENABLED,
           baseUrl: settings?.baseUrl || 'http://localhost:11434',
           model: settings?.model || '',
           timeoutMs: settings?.timeoutMs || 20000,
