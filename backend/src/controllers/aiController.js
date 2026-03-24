@@ -1,7 +1,10 @@
 const AiSetting = require('../models/AiSetting');
 
+// Guardrails for payload size and network timeouts to keep local models responsive.
 const MAX_MESSAGE_LENGTH = 1500;
 const MAX_HISTORY_ITEMS = 6;
+const MIN_TIMEOUT_MS = 1000;
+const MAX_TIMEOUT_MS = 120000;
 
 const sanitizeBaseUrl = (value) => {
   if (!value) return '';
@@ -73,8 +76,10 @@ const updateAiSettings = async (req, res) => {
     }
     if (updates.timeoutMs !== undefined) {
       const parsed = Number(updates.timeoutMs);
-      if (Number.isNaN(parsed) || parsed < 1000) {
-        return res.status(400).json({ message: 'timeoutMs 需为不小于 1000 的数字' });
+      if (Number.isNaN(parsed) || parsed < MIN_TIMEOUT_MS || parsed > MAX_TIMEOUT_MS) {
+        return res
+          .status(400)
+          .json({ message: `timeoutMs 需在 ${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS} 范围内` });
       }
       updates.timeoutMs = parsed;
     }

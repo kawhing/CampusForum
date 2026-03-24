@@ -13,6 +13,7 @@ import {
 import { RobotOutlined, SmileTwoTone, ThunderboltTwoTone, HeartTwoTone } from '@ant-design/icons';
 import { chatWithAi, getAiStatus } from '../api';
 import { findSensitiveKeyword } from '../utils/supportPrompt';
+import { buildAiHistory } from '../utils/aiHistory';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -21,8 +22,6 @@ const SUPPORT_CONTACTS = [
   { label: '24 小时心理援助热线', value: '12320（心理援助专线）、400-161-9995' },
   { label: '紧急情况', value: '请立即联系身边可信任的人或当地紧急救援电话。' }
 ];
-
-const buildHistory = (items) => items.map((msg) => ({ role: msg.from, content: msg.text }));
 
 export default function AiAssistant() {
   const [messages, setMessages] = useState([
@@ -69,7 +68,7 @@ export default function AiAssistant() {
     setMode(nextMode);
     setSupportKeyword(keyword || '');
 
-    const history = buildHistory(messages);
+    const history = buildAiHistory(messages);
     setSending(true);
     setMessages((prev) => [...prev, { from: 'user', text: userText }]);
     setInput('');

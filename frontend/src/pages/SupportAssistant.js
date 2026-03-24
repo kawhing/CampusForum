@@ -10,6 +10,7 @@ import {
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { consumeSupportAccess } from '../utils/supportPrompt';
 import { chatWithAi, getAiStatus } from '../api';
+import { buildAiHistory } from '../utils/aiHistory';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -79,7 +80,7 @@ export default function SupportAssistant() {
       return;
     }
     const userText = input.trim();
-    const history = messages.map((msg) => ({ role: msg.from, content: msg.text }));
+    const history = buildAiHistory(messages);
     setSending(true);
     setMessages((prev) => [...prev, { from: 'user', text: userText }]);
     setInput('');
