@@ -57,7 +57,6 @@ import {
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
-const DEFAULT_AI_ENABLED = true;
 
 function StatsOverview() {
   const [stats, setStats] = useState(null);
@@ -925,7 +924,7 @@ function AiSettingsPanel() {
       .then((res) => {
         const settings = res.data?.settings || res.data;
         form.setFieldsValue({
-          enabled: typeof settings?.enabled === 'boolean' ? settings.enabled : DEFAULT_AI_ENABLED,
+          enabled: settings?.enabled ?? true,
           baseUrl: settings?.baseUrl || 'http://localhost:11434',
           model: settings?.model || '',
           timeoutMs: settings?.timeoutMs || 20000,
