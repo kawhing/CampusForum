@@ -68,13 +68,13 @@ export default function AiAssistant() {
     setMode(nextMode);
     setSupportKeyword(keyword || '');
 
-    const history = buildAiHistory(messages);
+    const priorHistory = buildAiHistory(messages);
     setSending(true);
     setMessages((prev) => [...prev, { from: 'user', text: userText }]);
     setInput('');
 
     try {
-      const res = await chatWithAi({ message: userText, mode: nextMode, history });
+      const res = await chatWithAi({ message: userText, mode: nextMode, history: priorHistory });
       const reply = res.data?.reply || 'AI 暂时无法回应，请稍后再试。';
       setMessages((prev) => [...prev, { from: 'assistant', text: reply }]);
       if (res.data?.mode === 'support') {

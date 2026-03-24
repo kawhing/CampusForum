@@ -1,10 +1,9 @@
 const AiSetting = require('../models/AiSetting');
+const { AI_TIMEOUT_MS_MIN, AI_TIMEOUT_MS_MAX } = require('../config/aiDefaults');
 
 // Guardrails for payload size and network timeouts to keep local models responsive.
 const MAX_MESSAGE_LENGTH = 1500;
 const MAX_HISTORY_ITEMS = 6;
-const MIN_TIMEOUT_MS = 1000;
-const MAX_TIMEOUT_MS = 120000;
 
 const normalizeBaseUrl = (value) => {
   if (!value) return '';
@@ -76,10 +75,12 @@ const updateAiSettings = async (req, res) => {
     }
     if (updates.timeoutMs !== undefined) {
       const parsed = Number(updates.timeoutMs);
-      if (Number.isNaN(parsed) || parsed < MIN_TIMEOUT_MS || parsed > MAX_TIMEOUT_MS) {
+      if (Number.isNaN(parsed) || parsed < AI_TIMEOUT_MS_MIN || parsed > AI_TIMEOUT_MS_MAX) {
         return res
           .status(400)
-          .json({ message: `timeoutMs 需在 ${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS} 范围内` });
+          .json({
+            message: `timeoutMs 需在 ${AI_TIMEOUT_MS_MIN}-${AI_TIMEOUT_MS_MAX} 范围内`
+          });
       }
       updates.timeoutMs = parsed;
     }
@@ -164,6 +165,7 @@ const chatWithAi = async (req, res) => {
     }
 
     const data = await response.json();
+    // /api/chat returns { message: { content } }, /api/generate returns { response }
     const reply = data?.message?.content || data?.response;
     if (!reply) {
       return res.status(502).json({ message: 'AI 返回内容为空' });

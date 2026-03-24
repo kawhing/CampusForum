@@ -1,4 +1,13 @@
 const mongoose = require('mongoose');
+const {
+  AI_TIMEOUT_MS_MIN,
+  AI_TIMEOUT_MS_MAX,
+  DEFAULT_OLLAMA_BASE_URL,
+  DEFAULT_OLLAMA_MODEL,
+  DEFAULT_OLLAMA_TIMEOUT_MS,
+  DEFAULT_SYSTEM_PROMPT_GENERAL,
+  DEFAULT_SYSTEM_PROMPT_SUPPORT
+} = require('../config/aiDefaults');
 
 const AiSettingSchema = new mongoose.Schema(
   {
@@ -6,24 +15,22 @@ const AiSettingSchema = new mongoose.Schema(
     baseUrl: {
       type: String,
       trim: true,
-      default: () => process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+      default: () => DEFAULT_OLLAMA_BASE_URL
     },
-    model: { type: String, trim: true, default: () => process.env.OLLAMA_MODEL || 'llama3' },
+    model: { type: String, trim: true, default: () => DEFAULT_OLLAMA_MODEL },
     timeoutMs: {
       type: Number,
-      min: 1000,
-      max: 120000,
-      default: () => Number(process.env.OLLAMA_TIMEOUT_MS) || 20000
+      min: AI_TIMEOUT_MS_MIN,
+      max: AI_TIMEOUT_MS_MAX,
+      default: () => DEFAULT_OLLAMA_TIMEOUT_MS
     },
     systemPromptGeneral: {
       type: String,
-      default:
-        '你是校园匿名问答平台的 AI 助手，回答要简洁、友好、基于事实，避免编造。如果不确定请说明。'
+      default: DEFAULT_SYSTEM_PROMPT_GENERAL
     },
     systemPromptSupport: {
       type: String,
-      default:
-        '你是一名温暖、耐心的心理支持助手。请用安抚性的语气回应，鼓励寻求现实帮助；若有自伤风险，请提醒联系身边可信任的人或拨打心理援助热线。'
+      default: DEFAULT_SYSTEM_PROMPT_SUPPORT
     },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
   },
