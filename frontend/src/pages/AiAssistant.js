@@ -23,6 +23,8 @@ const SUPPORT_CONTACTS = [
   { label: '紧急情况', value: '请立即联系身边可信任的人或当地紧急救援电话。' }
 ];
 
+const AI_FALLBACK_REPLY = 'AI 服务暂不可用，请稍后再试。';
+
 export default function AiAssistant() {
   const [messages, setMessages] = useState([
     {
@@ -75,7 +77,7 @@ export default function AiAssistant() {
 
     try {
       const res = await chatWithAi({ message: userText, mode: nextMode, history: priorHistory });
-      const reply = res.data?.reply || 'AI 暂时无法回应，请稍后再试。';
+      const reply = res.data?.reply || AI_FALLBACK_REPLY;
       setMessages((prev) => [...prev, { from: 'assistant', text: reply }]);
       if (res.data?.mode === 'support') {
         setMode('support');
@@ -90,7 +92,7 @@ export default function AiAssistant() {
       message.error(err.response?.data?.message || 'AI 服务暂不可用');
       setMessages((prev) => [
         ...prev,
-        { from: 'assistant', text: 'AI 服务暂不可用，请稍后再试。' }
+        { from: 'assistant', text: AI_FALLBACK_REPLY }
       ]);
     } finally {
       setSending(false);

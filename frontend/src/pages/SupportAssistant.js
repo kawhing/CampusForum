@@ -29,6 +29,7 @@ const CONTACTS = [
 ];
 
 const SUPPORT_MODE = 'support';
+const AI_FALLBACK_REPLY = 'AI 服务暂不可用，请稍后再试。';
 
 export default function SupportAssistant() {
   const [searchParams] = useSearchParams();
@@ -86,7 +87,7 @@ export default function SupportAssistant() {
     setInput('');
     try {
       const res = await chatWithAi({ message: userText, mode: SUPPORT_MODE, history: priorHistory });
-      const reply = res.data?.reply || 'AI 暂时无法回应，请稍后再试。';
+      const reply = res.data?.reply || AI_FALLBACK_REPLY;
       setMessages((prev) => [...prev, { from: 'assistant', text: reply }]);
     } catch (err) {
       const status = err.response?.status;
@@ -98,7 +99,7 @@ export default function SupportAssistant() {
         ...prev,
         {
           from: 'assistant',
-          text: 'AI 服务暂不可用，请稍后再试。'
+          text: AI_FALLBACK_REPLY
         }
       ]);
     } finally {
