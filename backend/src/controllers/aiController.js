@@ -165,7 +165,7 @@ const chatWithAi = async (req, res) => {
     }
 
     const data = await response.json();
-    // /api/chat returns { message: { content } }, keep response fallback for compatibility.
+    // /api/chat returns { message: { content } }, response fallback for older Ollama builds.
     const reply = data?.message?.content || data?.response;
     if (!reply) {
       return res.status(502).json({ message: 'AI 返回内容为空' });

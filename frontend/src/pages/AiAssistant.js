@@ -79,11 +79,6 @@ export default function AiAssistant() {
       const res = await chatWithAi({ message: userText, mode: nextMode, history: priorHistory });
       const reply = res.data?.reply || AI_FALLBACK_REPLY;
       setMessages((prev) => [...prev, { from: 'assistant', text: reply }]);
-      if (res.data?.mode === 'support') {
-        setMode('support');
-      } else if (!keyword) {
-        setMode('general');
-      }
     } catch (err) {
       const status = err.response?.status;
       if (status === 503) {
