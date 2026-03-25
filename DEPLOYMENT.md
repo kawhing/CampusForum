@@ -182,6 +182,9 @@ docker compose up -d
 | `ADMIN_USERNAME` | `admin` | 默认管理员用户名 |
 | `ALLOW_ADMIN_PASSWORD_SYNC` | `true` | 是否在启动时同步管理员密码（禁用时设为 `false`） |
 | `ALLOW_ADMIN_SYNC_WHEN_BLOCKED` | `false` | 管理员被封禁时是否仍允许同步凭据（仅紧急恢复时设为 `true`） |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | 本地 Ollama API 地址（AI 功能使用） |
+| `OLLAMA_MODEL` | `llama3` | Ollama 模型名称 |
+| `OLLAMA_TIMEOUT_MS` | `20000` | AI 请求超时毫秒数 |
 
 ---
 

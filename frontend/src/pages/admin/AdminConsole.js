@@ -22,6 +22,7 @@ import {
   Popconfirm,
   List,
   Avatar,
+  Switch,
 } from 'antd';
 import {
   UserOutlined,
@@ -50,6 +51,8 @@ import {
   getAppeals,
   resolveAppeal,
   getAnswers,
+  getAiSettings,
+  updateAiSettings,
 } from '../../api';
 
 const { Title, Text } = Typography;
@@ -910,6 +913,104 @@ function OperationLogs() {
   );
 }
 
+function AiSettingsPanel() {
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const loadSettings = useCallback(() => {
+    setLoading(true);
+    getAiSettings()
+      .then((res) => {
+        const settings = res.data?.settings || res.data;
+        form.setFieldsValue({
+          enabled: settings?.enabled ?? true,
+          baseUrl: settings?.baseUrl || 'http://localhost:11434',
+          model: settings?.model || '',
+          timeoutMs: settings?.timeoutMs || 20000,
+          systemPromptGeneral: settings?.systemPromptGeneral || '',
+          systemPromptSupport: settings?.systemPromptSupport || '',
+        });
+      })
+      .catch(() => {
+        message.error('加载 AI 配置失败');
+      })
+      .finally(() => setLoading(false));
+  }, [form]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  const onFinish = (values) => {
+    setSaving(true);
+    updateAiSettings(values)
+      .then(() => {
+        message.success('AI 配置已更新');
+        loadSettings();
+      })
+      .catch((err) => {
+        message.error(err.response?.data?.message || '更新失败');
+      })
+      .finally(() => setSaving(false));
+  };
+
+  return (
+    <Spin spinning={loading}>
+      <Card
+        title="本地 AI 设置（Ollama）"
+        extra={
+          <Button type="default" onClick={loadSettings}>
+            刷新
+          </Button>
+        }
+      >
+        <Alert
+          type="info"
+          showIcon
+          message="AI 调用本地 Ollama API"
+          description="请确保服务器已运行 Ollama 服务（默认 http://localhost:11434），本功能不依赖容器部署。"
+          style={{ marginBottom: 16 }}
+        />
+        <Form form={form} layout="vertical" onFinish={onFinish}>
+          <Form.Item label="启用 AI" name="enabled" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+          <Form.Item
+            label="Ollama Base URL"
+            name="baseUrl"
+            rules={[{ required: true, message: '请输入 Ollama 地址' }]}
+          >
+            <Input placeholder="http://localhost:11434" />
+          </Form.Item>
+          <Form.Item
+            label="模型名称"
+            name="model"
+            rules={[{ required: true, message: '请输入模型名称' }]}
+          >
+            <Input placeholder="llama3" />
+          </Form.Item>
+          <Form.Item label="超时 (ms)" name="timeoutMs">
+            <InputNumber style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item label="普通问答系统提示词" name="systemPromptGeneral">
+            <TextArea rows={3} placeholder="AI 回答普通问题时的系统提示词" />
+          </Form.Item>
+          <Form.Item label="心理支持系统提示词" name="systemPromptSupport">
+            <TextArea rows={4} placeholder="AI 进入心理支持模式时的系统提示词" />
+          </Form.Item>
+          <Space>
+            <Button type="primary" htmlType="submit" loading={saving}>
+              保存配置
+            </Button>
+            <Button onClick={() => form.resetFields()}>重置</Button>
+          </Space>
+        </Form>
+      </Card>
+    </Spin>
+  );
+}
+
 export default function AdminConsole() {
   const tabItems = [
     {
@@ -971,6 +1072,16 @@ export default function AdminConsole() {
         </Space>
       ),
       children: <OperationLogs />,
+    },
+    {
+      key: 'ai',
+      label: (
+        <Space size={4}>
+          <MessageOutlined />
+          AI 设置
+        </Space>
+      ),
+      children: <AiSettingsPanel />,
     },
   ];
 

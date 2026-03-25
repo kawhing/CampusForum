@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Chat from './pages/Chat';
 import SupportAssistant from './pages/SupportAssistant';
+import AiAssistant from './pages/AiAssistant';
 
 export default function App() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
             </PrivateRoute>
           }
         />
+        <Route path="ai" element={<AiAssistant />} />
         <Route path="support" element={<SupportAssistant />} />
       </Route>
       <Route path="/login" element={<Login />} />
