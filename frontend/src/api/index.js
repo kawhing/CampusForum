@@ -106,7 +106,7 @@ export const getAdminStats = () => api.get('/admin/stats');
 
 // AI
 export const getAiStatus = () => api.get('/ai/status');
-export const chatWithAi = (data) => api.post('/ai/chat', data);
+export const chatWithAi = (data) => api.post('/ai/chat', data, { timeout: 120000 });
 export const getAiSettings = () => api.get('/ai/settings');
 export const updateAiSettings = (data) => api.put('/ai/settings', data);
 

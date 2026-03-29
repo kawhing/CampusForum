@@ -1,5 +1,5 @@
 const AiSetting = require('../models/AiSetting');
-const { AI_TIMEOUT_MS_MIN, AI_TIMEOUT_MS_MAX } = require('../config/aiDefaults');
+const { AI_TIMEOUT_MS_MIN, AI_TIMEOUT_MS_MAX, DEFAULT_API_TYPE } = require('../config/aiDefaults');
 
 // Guardrails for payload size and network timeouts to keep local models responsive.
 const MAX_MESSAGE_LENGTH = 1500;
@@ -44,7 +44,9 @@ const updateAiSettings = async (req, res) => {
     const updates = {};
     const fields = [
       'enabled',
+      'apiType',
       'baseUrl',
+      'apiKey',
       'model',
       'timeoutMs',
       'systemPromptGeneral',
@@ -57,12 +59,20 @@ const updateAiSettings = async (req, res) => {
       }
     });
 
+    if (updates.apiType !== undefined) {
+      if (!['ollama', 'openai'].includes(updates.apiType)) {
+        return res.status(400).json({ message: 'apiType 只能为 ollama 或 openai' });
+      }
+    }
     if (updates.baseUrl !== undefined) {
       const trimmed = normalizeBaseUrl(String(updates.baseUrl || ''));
       if (trimmed && !/^https?:\/\//i.test(trimmed)) {
         return res.status(400).json({ message: 'baseUrl 必须以 http/https 开头' });
       }
       updates.baseUrl = trimmed;
+    }
+    if (updates.apiKey !== undefined) {
+      updates.apiKey = String(updates.apiKey || '').trim();
     }
     if (updates.model !== undefined) {
       updates.model = String(updates.model || '').trim();
@@ -140,18 +150,33 @@ const chatWithAi = async (req, res) => {
       { role: 'user', content }
     ];
 
+    const apiType = settings.apiType || DEFAULT_API_TYPE;
+    const apiKey = settings.apiKey || '';
+
+    // Build request URL and body based on API type.
+    let apiUrl;
+    let requestBody;
+    if (apiType === 'openai') {
+      apiUrl = `${baseUrl}/v1/chat/completions`;
+      requestBody = { model: settings.model, messages };
+    } else {
+      apiUrl = `${baseUrl}/api/chat`;
+      requestBody = { model: settings.model, messages, stream: false };
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), settings.timeoutMs);
     let response;
     try {
-      response = await fetch(`${baseUrl}/api/chat`, {
+      response = await fetch(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: settings.model,
-          messages,
-          stream: false
-        }),
+        headers,
+        body: JSON.stringify(requestBody),
         signal: controller.signal
       });
     } finally {
@@ -160,13 +185,17 @@ const chatWithAi = async (req, res) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Ollama error:', response.status, errorText);
+      console.error('AI API error:', response.status, errorText);
       return res.status(502).json({ message: 'AI 服务暂不可用' });
     }
 
     const data = await response.json();
-    // Some Ollama builds/proxies return `response` instead of `message.content` for chat output.
-    const reply = data?.message?.content || data?.response;
+    // OpenAI format: choices[0].message.content
+    // Ollama format: message.content (or response for some builds)
+    const reply =
+      data?.choices?.[0]?.message?.content ||
+      data?.message?.content ||
+      data?.response;
     if (!reply) {
       return res.status(502).json({ message: 'AI 返回内容为空' });
     }
@@ -175,6 +204,11 @@ const chatWithAi = async (req, res) => {
   } catch (err) {
     if (err.name === 'AbortError') {
       return res.status(504).json({ message: 'AI 响应超时' });
+    }
+    // fetch() throws TypeError when the connection is refused or the host is unreachable
+    if (err.name === 'TypeError' && err.message && err.message.toLowerCase().includes('fetch')) {
+      console.error('AI connection error:', err.message, err.cause || '');
+      return res.status(502).json({ message: '无法连接到 AI 服务，请检查服务地址是否正确（Docker 部署时请使用 http://host.docker.internal:11434）' });
     }
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
