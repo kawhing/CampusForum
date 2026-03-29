@@ -205,6 +205,11 @@ const chatWithAi = async (req, res) => {
     if (err.name === 'AbortError') {
       return res.status(504).json({ message: 'AI 响应超时' });
     }
+    // fetch() throws TypeError when the connection is refused or the host is unreachable
+    if (err.name === 'TypeError' && err.message && err.message.toLowerCase().includes('fetch')) {
+      console.error('AI connection error:', err.message, err.cause || '');
+      return res.status(502).json({ message: '无法连接到 AI 服务，请检查服务地址是否正确（Docker 部署时请使用 http://host.docker.internal:11434）' });
+    }
     console.error(err);
     return res.status(500).json({ message: 'Server error' });
   }

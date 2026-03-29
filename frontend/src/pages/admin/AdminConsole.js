@@ -971,7 +971,7 @@ function AiSettingsPanel() {
           type="info"
           showIcon
           message="AI 接口配置"
-          description="支持 Ollama 本地模型（默认 http://localhost:11434）和 OpenAI 兼容接口（需填写 API Key）。"
+          description="支持 Ollama 本地模型和 OpenAI 兼容接口。使用 Docker Compose 部署时，Ollama 地址请填写 http://host.docker.internal:11434（不能用 localhost，因为 localhost 在容器内指向容器本身）。直接运行后端时使用 http://localhost:11434。"
           style={{ marginBottom: 16 }}
         />
         <Form form={form} layout="vertical" onFinish={onFinish}>
@@ -995,7 +995,7 @@ function AiSettingsPanel() {
             name="baseUrl"
             rules={[{ required: true, message: '请输入接口地址' }]}
           >
-            <Input placeholder="http://localhost:11434 或 https://api.openai.com" />
+            <Input placeholder="Docker 部署: http://host.docker.internal:11434 / 直接运行: http://localhost:11434" />
           </Form.Item>
           <Form.Item
             label="API Key（OpenAI 兼容接口必填）"
