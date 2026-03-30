@@ -27,7 +27,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !_isLoggingOut) {
+    const requestPath = error.config?.url || '';
+    const isAuthRequest =
+      requestPath.includes('/auth/login') ||
+      requestPath.includes('/auth/register') ||
+      requestPath.includes('/auth/logout');
+    if (error.response?.status === 401 && !_isLoggingOut && !isAuthRequest) {
       _isLoggingOut = true;
       if (_store) {
         import('../store/slices/authSlice').then(({ logout }) => {

@@ -20,12 +20,12 @@ export default function Login() {
   const [form] = Form.useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error, token } = useSelector((state) => state.auth);
+  const { loading, error, token, user } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (token) navigate('/');
+    if (token && user) navigate('/');
     return () => { dispatch(clearError()); };
-  }, [token, navigate, dispatch]);
+  }, [token, user, navigate, dispatch]);
 
   const onFinish = async (values) => {
     const result = await dispatch(loginUser(values));
