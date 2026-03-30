@@ -100,8 +100,9 @@ const changePassword = async (req, res) => {
 
 const getMyQuestions = async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limitParam = req.query.limit ?? req.query.pageSize;
+    const limit = Math.min(100, Math.max(1, parseInt(limitParam, 10) || 10));
 
     const total = await Question.countDocuments({ createdBy: req.user._id });
     const pages = Math.ceil(total / limit);
@@ -119,8 +120,9 @@ const getMyQuestions = async (req, res) => {
 
 const getMyAnswers = async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10));
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limitParam = req.query.limit ?? req.query.pageSize;
+    const limit = Math.min(100, Math.max(1, parseInt(limitParam, 10) || 10));
 
     const filter = { createdBy: req.user._id, isDeleted: false };
     const total = await Answer.countDocuments(filter);

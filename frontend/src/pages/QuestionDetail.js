@@ -728,7 +728,7 @@ export default function QuestionDetail() {
             {currentQuestion.category && (
               <Tag color="blue">{currentQuestion.category}</Tag>
             )}
-            {currentQuestion.archived && <Tag color="red">已归档</Tag>}
+            {currentQuestion.isArchived && <Tag color="red">已归档</Tag>}
             {currentQuestion.acceptedAnswerId && <Tag color="green">已解决</Tag>}
             {currentQuestion.isUrgent && (
               <Tag color="volcano">紧急求助</Tag>
@@ -762,7 +762,7 @@ export default function QuestionDetail() {
             </Space>
           </Space>
 
-          {currentQuestion.archived && currentQuestion.archiveReason && (
+          {currentQuestion.isArchived && currentQuestion.archiveReason && (
             <Alert
               message="该问题已被归档"
               description={`归档原因：${currentQuestion.archiveReason}`}

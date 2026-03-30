@@ -157,7 +157,7 @@ function MyQuestions() {
               description={
                 <Space size="small">
                   {q.category && <Tag color="blue">{q.category}</Tag>}
-                  {q.archived && <Tag color="red">已归档</Tag>}
+                  {q.isArchived && <Tag color="red">已归档</Tag>}
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     {q.createdAt
                       ? new Date(q.createdAt).toLocaleDateString('zh-CN')

@@ -180,7 +180,7 @@ export default function QuestionList() {
                         {q.category}
                       </Tag>
                     )}
-                    {q.archived && <Tag color="red">已归档</Tag>}
+                    {q.isArchived && <Tag color="red">已归档</Tag>}
                   </Space>
 
                   <Text
