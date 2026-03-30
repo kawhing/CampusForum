@@ -100,7 +100,7 @@ const changePassword = async (req, res) => {
 
 const getMyQuestions = async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limitParam = req.query.limit ?? req.query.pageSize;
     const limit = Math.min(100, Math.max(1, parseInt(limitParam, 10) || 10));
 
@@ -120,7 +120,7 @@ const getMyQuestions = async (req, res) => {
 
 const getMyAnswers = async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limitParam = req.query.limit ?? req.query.pageSize;
     const limit = Math.min(100, Math.max(1, parseInt(limitParam, 10) || 10));
 
