@@ -47,8 +47,9 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Email or username and password are required' });
     }
 
+    const normalizedIdentifier = identifier.toLowerCase();
     const user = await User.findOne({
-      $or: [{ email: identifier }, { username: identifier }]
+      $or: [{ email: normalizedIdentifier }, { username: normalizedIdentifier }]
     }).collation({ locale: 'en', strength: 2 });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
