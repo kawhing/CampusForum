@@ -28,10 +28,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const requestPath = error.config?.url || '';
-    const isAuthRequest =
-      requestPath.includes('/auth/login') ||
-      requestPath.includes('/auth/register') ||
-      requestPath.includes('/auth/logout');
+    const normalizedPath = requestPath.startsWith('http')
+      ? new URL(requestPath).pathname
+      : requestPath.split('?')[0];
+    const strippedPath = normalizedPath.replace(/^\/api/, '');
+    const authPaths = ['/auth/login', '/auth/register', '/auth/logout'];
+    const isAuthRequest = authPaths.includes(strippedPath);
     if (error.response?.status === 401 && !_isLoggingOut && !isAuthRequest) {
       _isLoggingOut = true;
       if (_store) {
