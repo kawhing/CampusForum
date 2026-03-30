@@ -269,7 +269,7 @@ function QuestionManagement() {
       title: '状态',
       key: 'status',
       render: (_, r) =>
-        r.archived ? <Tag color="red">已归档</Tag> : <Tag color="green">正常</Tag>,
+        r.isArchived ? <Tag color="red">已归档</Tag> : <Tag color="green">正常</Tag>,
     },
     {
       title: '回答数',
@@ -288,7 +288,7 @@ function QuestionManagement() {
       key: 'actions',
       render: (_, r) => (
         <Space size="small" wrap>
-          {r.archived ? (
+          {r.isArchived ? (
             <Button size="small" onClick={() => handleUnarchive(r)}>
               取消归档
             </Button>

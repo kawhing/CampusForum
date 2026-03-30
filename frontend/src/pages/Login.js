@@ -64,15 +64,12 @@ export default function Login() {
         <Form form={form} layout="vertical" onFinish={onFinish} autoComplete="off">
           <Form.Item
             name="email"
-            label="邮箱"
-            rules={[
-              { required: true, message: '请输入邮箱' },
-              { type: 'email', message: '请输入有效的邮箱地址' },
-            ]}
+            label="邮箱或用户名"
+            rules={[{ required: true, message: '请输入邮箱或用户名' }]}
           >
             <Input
               prefix={<MailOutlined />}
-              placeholder="请输入邮箱"
+              placeholder="请输入邮箱或用户名"
               size="large"
             />
           </Form.Item>
