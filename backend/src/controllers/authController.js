@@ -48,11 +48,9 @@ const login = async (req, res) => {
     }
 
     const normalizedEmail = identifier.toLowerCase();
-    const escapedIdentifier = identifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const usernameRegex = new RegExp(`^${escapedIdentifier}$`, 'i');
     const user = await User.findOne({
-      $or: [{ email: normalizedEmail }, { username: usernameRegex }]
-    });
+      $or: [{ email: normalizedEmail }, { username: identifier }]
+    }).collation({ locale: 'en', strength: 2 });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
