@@ -21,6 +21,10 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 
+// Trust the first proxy
+// (Needed for express-rate-limit to work correctly behind a reverse proxy like Nginx)
+app.set('trust proxy', 1);
+
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,

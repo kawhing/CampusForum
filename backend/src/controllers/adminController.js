@@ -287,8 +287,9 @@ const changeQuestionCategory = async (req, res) => {
 
 const getOperationLogs = async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limitParam = req.query.limit ?? req.query.pageSize;
+    const limit = Math.min(100, Math.max(1, parseInt(limitParam, 10) || 20));
 
     const total = await OperationLog.countDocuments();
     const pages = Math.ceil(total / limit);

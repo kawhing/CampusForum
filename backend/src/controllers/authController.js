@@ -42,11 +42,15 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+    const identifier = typeof email === 'string' ? email.trim() : '';
+    if (!identifier || !password) {
+      return res.status(400).json({ message: 'Email or username and password are required' });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const normalizedIdentifier = identifier.toLowerCase();
+    const user = await User.findOne({
+      $or: [{ email: normalizedIdentifier }, { username: normalizedIdentifier }]
+    }).collation({ locale: 'en', strength: 2 });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }

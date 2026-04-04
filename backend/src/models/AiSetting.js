@@ -5,6 +5,7 @@ const {
   DEFAULT_OLLAMA_BASE_URL,
   DEFAULT_OLLAMA_MODEL,
   DEFAULT_OLLAMA_TIMEOUT_MS,
+  DEFAULT_API_TYPE,
   DEFAULT_SYSTEM_PROMPT_GENERAL,
   DEFAULT_SYSTEM_PROMPT_SUPPORT
 } = require('../config/aiDefaults');
@@ -12,11 +13,17 @@ const {
 const AiSettingSchema = new mongoose.Schema(
   {
     enabled: { type: Boolean, default: true },
+    apiType: {
+      type: String,
+      enum: ['ollama', 'openai'],
+      default: () => DEFAULT_API_TYPE
+    },
     baseUrl: {
       type: String,
       trim: true,
       default: () => DEFAULT_OLLAMA_BASE_URL
     },
+    apiKey: { type: String, trim: true, default: '' },
     model: { type: String, trim: true, default: () => DEFAULT_OLLAMA_MODEL },
     timeoutMs: {
       type: Number,

@@ -269,7 +269,7 @@ function QuestionManagement() {
       title: '状态',
       key: 'status',
       render: (_, r) =>
-        r.archived ? <Tag color="red">已归档</Tag> : <Tag color="green">正常</Tag>,
+        r.isArchived ? <Tag color="red">已归档</Tag> : <Tag color="green">正常</Tag>,
     },
     {
       title: '回答数',
@@ -288,7 +288,7 @@ function QuestionManagement() {
       key: 'actions',
       render: (_, r) => (
         <Space size="small" wrap>
-          {r.archived ? (
+          {r.isArchived ? (
             <Button size="small" onClick={() => handleUnarchive(r)}>
               取消归档
             </Button>
@@ -925,7 +925,9 @@ function AiSettingsPanel() {
         const settings = res.data?.settings || res.data;
         form.setFieldsValue({
           enabled: settings?.enabled ?? true,
+          apiType: settings?.apiType || 'ollama',
           baseUrl: settings?.baseUrl || 'http://localhost:11434',
+          apiKey: settings?.apiKey || '',
           model: settings?.model || '',
           timeoutMs: settings?.timeoutMs || 20000,
           systemPromptGeneral: settings?.systemPromptGeneral || '',
@@ -958,7 +960,7 @@ function AiSettingsPanel() {
   return (
     <Spin spinning={loading}>
       <Card
-        title="本地 AI 设置（Ollama）"
+        title="AI 设置"
         extra={
           <Button type="default" onClick={loadSettings}>
             刷新
@@ -968,8 +970,8 @@ function AiSettingsPanel() {
         <Alert
           type="info"
           showIcon
-          message="AI 调用本地 Ollama API"
-          description="请确保服务器已运行 Ollama 服务（默认 http://localhost:11434），本功能不依赖容器部署。"
+          message="AI 接口配置"
+          description="支持 Ollama 本地模型和 OpenAI 兼容接口。使用 Docker Compose 部署时，Ollama 地址请填写 http://host.docker.internal:11434（不能用 localhost，因为 localhost 在容器内指向容器本身）。直接运行后端时使用 http://localhost:11434。"
           style={{ marginBottom: 16 }}
         />
         <Form form={form} layout="vertical" onFinish={onFinish}>
@@ -977,18 +979,36 @@ function AiSettingsPanel() {
             <Switch />
           </Form.Item>
           <Form.Item
-            label="Ollama Base URL"
-            name="baseUrl"
-            rules={[{ required: true, message: '请输入 Ollama 地址' }]}
+            label="接口类型"
+            name="apiType"
+            rules={[{ required: true, message: '请选择接口类型' }]}
           >
-            <Input placeholder="http://localhost:11434" />
+            <Select
+              options={[
+                { value: 'ollama', label: 'Ollama（本地模型）' },
+                { value: 'openai', label: 'OpenAI 兼容接口' },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Base URL"
+            name="baseUrl"
+            rules={[{ required: true, message: '请输入接口地址' }]}
+          >
+            <Input placeholder="Docker 部署: http://host.docker.internal:11434 / 直接运行: http://localhost:11434" />
+          </Form.Item>
+          <Form.Item
+            label="API Key（OpenAI 兼容接口必填）"
+            name="apiKey"
+          >
+            <Input.Password placeholder="留空则不发送 Authorization 头" autoComplete="off" />
           </Form.Item>
           <Form.Item
             label="模型名称"
             name="model"
             rules={[{ required: true, message: '请输入模型名称' }]}
           >
-            <Input placeholder="llama3" />
+            <Input placeholder="llama3 / gpt-4o-mini 等" />
           </Form.Item>
           <Form.Item label="超时 (ms)" name="timeoutMs">
             <InputNumber style={{ width: '100%' }} />

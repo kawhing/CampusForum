@@ -37,6 +37,11 @@ services:
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ALLOW_ADMIN_PASSWORD_SYNC: ${ALLOW_ADMIN_PASSWORD_SYNC:-true}
       ALLOW_ADMIN_SYNC_WHEN_BLOCKED: ${ALLOW_ADMIN_SYNC_WHEN_BLOCKED:-false}
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_MODEL: qwen3.5:2b
+      OLLAMA_TIMEOUT_MS: 60000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - anon-qa-network
     depends_on:

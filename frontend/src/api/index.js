@@ -27,7 +27,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !_isLoggingOut) {
+    const requestPath = error.config?.url || '';
+    const normalizedPath = requestPath.startsWith('http')
+      ? new URL(requestPath).pathname
+      : requestPath.split('?')[0];
+    const strippedPath = normalizedPath.replace(/^\/api/, '');
+    const authPaths = ['/auth/login', '/auth/register', '/auth/logout'];
+    const isAuthRequest = authPaths.includes(strippedPath);
+    if (error.response?.status === 401 && !_isLoggingOut && !isAuthRequest) {
       _isLoggingOut = true;
       if (_store) {
         import('../store/slices/authSlice').then(({ logout }) => {
@@ -106,7 +113,7 @@ export const getAdminStats = () => api.get('/admin/stats');
 
 // AI
 export const getAiStatus = () => api.get('/ai/status');
-export const chatWithAi = (data) => api.post('/ai/chat', data);
+export const chatWithAi = (data) => api.post('/ai/chat', data, { timeout: 120000 });
 export const getAiSettings = () => api.get('/ai/settings');
 export const updateAiSettings = (data) => api.put('/ai/settings', data);
 

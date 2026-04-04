@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm config set registry https://registry.npmmirror.com && npm install
 
 COPY public/ ./public/
 COPY src/ ./src/
@@ -14,12 +14,15 @@ ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
 RUN npm run build
 
-FROM nginx:alpine
+FROM node:18 AS runtime
 
-COPY --from=builder /app/build /usr/share/nginx/html
+WORKDIR /app
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/build ./build
+COPY server.js ./server.js
+
+
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "server.js"]
