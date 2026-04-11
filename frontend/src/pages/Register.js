@@ -13,6 +13,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { registerUser } from '../store/slices/authSlice';
 import { clearError } from '../store/slices/authSlice';
+import {
+  GRADIENT_AUTH_BG,
+  GRADIENT_PRIMARY,
+  SHADOW_AUTH_CARD,
+  SHADOW_LOGO,
+} from '../constants/theme';
 
 const { Title, Text } = Typography;
 
@@ -42,12 +48,34 @@ export default function Register() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#f0f2f5',
+        background: GRADIENT_AUTH_BG,
       }}
     >
-      <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <Title level={2} style={{ marginBottom: 4 }}>
+      <Card
+        style={{
+          width: 420,
+          boxShadow: SHADOW_AUTH_CARD,
+          border: 'none',
+          borderRadius: 16,
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 56,
+              height: 56,
+              borderRadius: 14,
+              background: GRADIENT_PRIMARY,
+              marginBottom: 16,
+              boxShadow: SHADOW_LOGO,
+            }}
+          >
+            <span style={{ fontSize: 26 }}>🎓</span>
+          </div>
+          <Title level={2} style={{ marginBottom: 4, color: '#1e1b4b' }}>
             匿名问答平台
           </Title>
           <Text type="secondary">创建您的账号</Text>

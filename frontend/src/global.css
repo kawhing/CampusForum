@@ -1,0 +1,80 @@
+/* Global modern UI polish */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* CSS custom properties for consistent theming */
+:root {
+  --color-primary: #4f46e5;
+  --color-primary-rgb: 79, 70, 229;
+  --border-radius-sm: 6px;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth hover transitions on cards */
+.ant-card-hoverable {
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.ant-card-hoverable:hover {
+  box-shadow: 0 10px 30px -5px rgba(var(--color-primary-rgb), 0.18),
+    0 4px 8px -2px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-2px);
+}
+
+/* Smooth button transitions */
+.ant-btn {
+  transition: box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.ant-btn-primary:hover {
+  box-shadow: 0 4px 14px rgba(var(--color-primary-rgb), 0.45);
+  transform: translateY(-1px);
+}
+
+.ant-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Tag styling */
+.ant-tag {
+  font-weight: 500;
+}
+
+/* Input focus ring */
+.ant-input:focus,
+.ant-input-focused {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.12);
+}
+
+/* Menu selected item */
+.ant-menu-item-selected {
+  font-weight: 600;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

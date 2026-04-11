@@ -27,6 +27,7 @@ import { fetchQuestions } from '../store/slices/questionsSlice';
 import { getCategories } from '../api';
 import { DEFAULT_CATEGORIES } from '../constants/categories';
 import { getAuthorDisplayName } from '../utils/questionOwner';
+import { GRADIENT_PRIMARY, SHADOW_PRIMARY_BUTTON, BORDER_RADIUS_SM } from '../constants/theme';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -106,9 +107,9 @@ export default function QuestionList() {
 
   return (
     <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+      <Row justify="space-between" align="middle" style={{ marginBottom: 20 }}>
         <Col>
-          <Title level={3} style={{ margin: 0 }}>
+          <Title level={3} style={{ margin: 0, color: '#1e1b4b', fontWeight: 700 }}>
             问题列表
           </Title>
         </Col>
@@ -117,13 +118,26 @@ export default function QuestionList() {
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => navigate('/ask')}
+            size="large"
+            style={{
+              background: GRADIENT_PRIMARY,
+              border: 'none',
+              boxShadow: SHADOW_PRIMARY_BUTTON,
+              fontWeight: 600,
+            }}
           >
             提问
           </Button>
         </Col>
       </Row>
 
-      <Card style={{ marginBottom: 16 }}>
+      <Card
+        style={{
+          marginBottom: 20,
+          border: '1px solid #e5e7eb',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        }}
+      >
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={10}>
             <Search
@@ -170,35 +184,49 @@ export default function QuestionList() {
             <List.Item key={q.id || q._id} style={{ padding: 0, marginBottom: 12 }}>
               <Card
                 hoverable
-                style={{ width: '100%' }}
+                style={{
+                  width: '100%',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 14,
+                  transition: 'all 0.25s ease',
+                  cursor: 'pointer',
+                }}
+                styles={{
+                  body: { padding: '20px 24px' },
+                }}
                 onClick={() => navigate(`/questions/${q.id || q._id}`)}
               >
-                <Space direction="vertical" style={{ width: '100%' }} size={8}>
+                <Space direction="vertical" style={{ width: '100%' }} size={10}>
                   <Space wrap>
                     {q.category && (
-                      <Tag color={CATEGORY_COLORS[q.category] || 'blue'}>
+                      <Tag
+                        color={CATEGORY_COLORS[q.category] || 'blue'}
+                        style={{ borderRadius: BORDER_RADIUS_SM, fontWeight: 500, fontSize: 12 }}
+                      >
                         {q.category}
                       </Tag>
                     )}
-                    {q.isArchived && <Tag color="red">已归档</Tag>}
+                    {q.isArchived && (
+                      <Tag color="red" style={{ borderRadius: BORDER_RADIUS_SM }}>已归档</Tag>
+                    )}
                   </Space>
 
                   <Text
                     strong
-                    style={{ fontSize: 16, cursor: 'pointer', color: '#1890ff' }}
+                    style={{ fontSize: 16, cursor: 'pointer', color: '#1e1b4b', lineHeight: 1.5 }}
                   >
                     {q.title}
                   </Text>
 
                   <Row justify="space-between" align="middle">
                     <Col>
-                      <Space size="small" style={{ color: '#999' }}>
-                        <Text type="secondary">
+                      <Space size="small">
+                        <Text type="secondary" style={{ fontSize: 13 }}>
                           {getAuthorDisplayName(q, currentUser, '匿名用户')}
                         </Text>
                         <Text type="secondary">·</Text>
-                        <ClockCircleOutlined />
-                        <Text type="secondary">
+                        <ClockCircleOutlined style={{ fontSize: 12, color: '#9ca3af' }} />
+                        <Text type="secondary" style={{ fontSize: 13 }}>
                           {q.createdAt
                             ? new Date(q.createdAt).toLocaleDateString('zh-CN')
                             : ''}
@@ -206,14 +234,14 @@ export default function QuestionList() {
                       </Space>
                     </Col>
                     <Col>
-                      <Space size="large" style={{ color: '#999' }}>
+                      <Space size="large">
                         <Space size={4}>
-                          <EyeOutlined />
-                          <Text type="secondary">{q.viewCount || 0}</Text>
+                          <EyeOutlined style={{ color: '#6b7280', fontSize: 13 }} />
+                          <Text type="secondary" style={{ fontSize: 13 }}>{q.viewCount || 0}</Text>
                         </Space>
                         <Space size={4}>
-                          <MessageOutlined />
-                          <Text type="secondary">{q.answerCount || 0}</Text>
+                          <MessageOutlined style={{ color: '#6b7280', fontSize: 13 }} />
+                          <Text type="secondary" style={{ fontSize: 13 }}>{q.answerCount || 0}</Text>
                         </Space>
                       </Space>
                     </Col>
