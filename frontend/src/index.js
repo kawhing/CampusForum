@@ -6,6 +6,7 @@ import App from './App';
 import store from './store';
 import { injectStore } from './api';
 import 'antd/dist/reset.css';
+import './global.css';
 
 // Inject store into API module to enable 401 auto-logout without circular imports
 injectStore(store);

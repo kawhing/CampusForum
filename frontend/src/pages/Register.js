@@ -42,12 +42,34 @@ export default function Register() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#f0f2f5',
+        background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%)',
       }}
     >
-      <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <Title level={2} style={{ marginBottom: 4 }}>
+      <Card
+        style={{
+          width: 420,
+          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
+          border: 'none',
+          borderRadius: 16,
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 56,
+              height: 56,
+              borderRadius: 14,
+              background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+              marginBottom: 16,
+              boxShadow: '0 8px 20px rgba(79,70,229,0.4)',
+            }}
+          >
+            <span style={{ fontSize: 26 }}>🎓</span>
+          </div>
+          <Title level={2} style={{ marginBottom: 4, color: '#1e1b4b' }}>
             匿名问答平台
           </Title>
           <Text type="secondary">创建您的账号</Text>

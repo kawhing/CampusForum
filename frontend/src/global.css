@@ -1,0 +1,81 @@
+/* Global modern UI polish */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth hover transitions on cards */
+.ant-card-hoverable {
+  transition: box-shadow 0.25s ease, transform 0.25s ease !important;
+}
+
+.ant-card-hoverable:hover {
+  box-shadow: 0 10px 30px -5px rgba(79, 70, 229, 0.18),
+    0 4px 8px -2px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-2px);
+}
+
+/* Smooth button transitions */
+.ant-btn {
+  transition: all 0.2s ease !important;
+}
+
+/* Primary button gradient */
+.ant-btn-primary {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+  border: none !important;
+}
+
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, #4338ca, #6d28d9) !important;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+.ant-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Tag styling */
+.ant-tag {
+  font-weight: 500;
+}
+
+/* Input focus ring */
+.ant-input:focus,
+.ant-input-focused,
+.ant-select-focused .ant-select-selector {
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12) !important;
+}
+
+/* Menu selected item */
+.ant-menu-item-selected {
+  font-weight: 600;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}

@@ -30,10 +30,10 @@ const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 const { useBreakpoint } = Grid;
 
-const BRAND_PRIMARY_DARK = '#0b1533';
-const BRAND_SECONDARY_DARK = '#0c213f';
-const BRAND_ACCENT_DARK = '#123a63';
-const BRAND_NAVY = '#0f3f7a';
+const BRAND_PRIMARY_DARK = '#1e1b4b';
+const BRAND_SECONDARY_DARK = '#312e81';
+const BRAND_ACCENT_DARK = '#3730a3';
+const BRAND_NAVY = '#4338ca';
 const APP_LAYOUT_GRADIENT = `linear-gradient(135deg, ${BRAND_PRIMARY_DARK} 0%, ${BRAND_SECONDARY_DARK} 40%, ${BRAND_ACCENT_DARK} 100%)`;
 const HEADER_GRADIENT = `linear-gradient(120deg, ${BRAND_PRIMARY_DARK} 0%, ${BRAND_NAVY} 45%, ${BRAND_PRIMARY_DARK} 100%)`;
 const CONTENT_GRADIENT = 'linear-gradient(145deg, #ffffff 0%, #f5f7fb 100%)';
@@ -247,7 +247,7 @@ export default function AppLayout() {
                 <Avatar
                   size="small"
                   icon={<UserOutlined />}
-                  style={{ backgroundColor: '#1890ff' }}
+                  style={{ backgroundColor: '#4f46e5' }}
                 />
                 {!isMobile && (
                   <Text style={{ color: '#fff' }}>{user.username}</Text>
