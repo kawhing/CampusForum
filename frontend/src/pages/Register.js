@@ -13,6 +13,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { registerUser } from '../store/slices/authSlice';
 import { clearError } from '../store/slices/authSlice';
+import {
+  GRADIENT_AUTH_BG,
+  GRADIENT_PRIMARY,
+  SHADOW_AUTH_CARD,
+  SHADOW_LOGO,
+} from '../constants/theme';
 
 const { Title, Text } = Typography;
 
@@ -42,13 +48,13 @@ export default function Register() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%)',
+        background: GRADIENT_AUTH_BG,
       }}
     >
       <Card
         style={{
           width: 420,
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)',
+          boxShadow: SHADOW_AUTH_CARD,
           border: 'none',
           borderRadius: 16,
         }}
@@ -62,9 +68,9 @@ export default function Register() {
               width: 56,
               height: 56,
               borderRadius: 14,
-              background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+              background: GRADIENT_PRIMARY,
               marginBottom: 16,
-              boxShadow: '0 8px 20px rgba(79,70,229,0.4)',
+              boxShadow: SHADOW_LOGO,
             }}
           >
             <span style={{ fontSize: 26 }}>🎓</span>

@@ -27,6 +27,7 @@ import { fetchQuestions } from '../store/slices/questionsSlice';
 import { getCategories } from '../api';
 import { DEFAULT_CATEGORIES } from '../constants/categories';
 import { getAuthorDisplayName } from '../utils/questionOwner';
+import { GRADIENT_PRIMARY, SHADOW_PRIMARY_BUTTON } from '../constants/theme';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -119,9 +120,9 @@ export default function QuestionList() {
             onClick={() => navigate('/ask')}
             size="large"
             style={{
-              background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+              background: GRADIENT_PRIMARY,
               border: 'none',
-              boxShadow: '0 4px 14px rgba(79,70,229,0.4)',
+              boxShadow: SHADOW_PRIMARY_BUTTON,
               fontWeight: 600,
             }}
           >
