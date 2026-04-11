@@ -27,7 +27,7 @@ import { fetchQuestions } from '../store/slices/questionsSlice';
 import { getCategories } from '../api';
 import { DEFAULT_CATEGORIES } from '../constants/categories';
 import { getAuthorDisplayName } from '../utils/questionOwner';
-import { GRADIENT_PRIMARY, SHADOW_PRIMARY_BUTTON } from '../constants/theme';
+import { GRADIENT_PRIMARY, SHADOW_PRIMARY_BUTTON, BORDER_RADIUS_SM } from '../constants/theme';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -201,13 +201,13 @@ export default function QuestionList() {
                     {q.category && (
                       <Tag
                         color={CATEGORY_COLORS[q.category] || 'blue'}
-                        style={{ borderRadius: 6, fontWeight: 500, fontSize: 12 }}
+                        style={{ borderRadius: BORDER_RADIUS_SM, fontWeight: 500, fontSize: 12 }}
                       >
                         {q.category}
                       </Tag>
                     )}
                     {q.isArchived && (
-                      <Tag color="red" style={{ borderRadius: 6 }}>已归档</Tag>
+                      <Tag color="red" style={{ borderRadius: BORDER_RADIUS_SM }}>已归档</Tag>
                     )}
                   </Space>
 
